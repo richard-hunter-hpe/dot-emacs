@@ -1,7 +1,7 @@
 #+begin_src emacs-lisp :tangle lisp/common.el
   (setq debug-on-error t)
   (setq user-full-name "Richard Hunter"
-        user-mail-address "richard.hunter@hpe.com")
+        user-mail-address "")
 #+end_src
 
 * Startup Config
