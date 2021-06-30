@@ -1,5 +1,6 @@
 #+begin_src emacs-lisp :tangle lisp/common.el
-  (setq debug-on-error t)
+  ;; supress debugger by default
+  ;; (setq debug-on-error t)
   (setq user-full-name "Richard Hunter"
         user-mail-address "")
 #+end_src
