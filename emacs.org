@@ -223,6 +223,9 @@ By default, use =modus-vivendi= theme, a dark theme by the talented Prot.
 (load-theme 'modus-vivendi t)
 #+end_src
 
+** Modeline
+- TODO: customize modeline
+- [[https://occasionallycogent.com/custom_emacs_modeline/index.html][Customizing Modeline]]
 
 * Custom Utility Functions
 Here we add custom utility functions
@@ -574,6 +577,15 @@ Disable line numbers for the following modes
 ;; turn on flychecking globally
 ;; (add-hook 'after-init-hook #'global-flycheck-mode)
 #+end_src
+
+** YAML
+#+begin_src emacs-lisp :tangle lisp/hooks.el 
+  (use-package yaml-mode
+    :ensure t
+  )
+#+end_src
+
+** Docker
 
 ** Markdown
 Define a function =my-markdown-preview= for conveniently previewing markdown files in the GitHub style.
