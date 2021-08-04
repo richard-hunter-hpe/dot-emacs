@@ -586,6 +586,11 @@ Disable line numbers for the following modes
 #+end_src
 
 ** Docker
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (use-package dockerfile-mode
+    :ensure t
+  )
+#+end_src
 
 ** Markdown
 Define a function =my-markdown-preview= for conveniently previewing markdown files in the GitHub style.

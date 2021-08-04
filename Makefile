@@ -1,20 +1,20 @@
 # Set config folder path
-SRC_DIR=$(shell pwd)
+SRC_DIR := $(shell pwd)
 
 # Source file
-SRC_FILE=$(SRC_DIR)/emacs.org
+SRC_FILE := $(SRC_DIR)/emacs.org
 
 # Destination file
-DEST_FILE=$(SRC_DIR)/emacs.el
+DEST_FILE := $(SRC_DIR)/emacs.el
 
 # Destination directory
-DEST_DIR=$(SRC_DIR)/lisp
+DEST_DIR := $(SRC_DIR)/lisp
 
-# EMACS_BINARY should point to your installation of GNU emacs. I compile from dev builds.
-EMACS_BINARY=/Users/rhunter/git/dev/emacs/src/emacs
+# EMACS_BINARY should point to your installation of GNU emacs
+EMACS_BINARY := /Users/rhunter/git/dev/emacs/src/emacs
 
 # The following will compile emacs.org to emacs.el
-EMACS=$(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"emacs.org\")")
+EMACS = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"emacs.org\")")
 
 .PHONY: test build clean help install
 
@@ -36,7 +36,7 @@ build: setup-dest-dir |
 test: build;
 	$(shell $(EMACS_BINARY) -nw -Q -l $(DEST_FILE))
 
-## test: Test init file
+## print-test: Test init file
 print-test:
 	echo $(EMACS_BINARY) -nw -Q -l $(DEST_FILE)
 
