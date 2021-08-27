@@ -14,7 +14,7 @@ Additionally, hide certain elements if in GUI emacs including scroll bar, tool b
   (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
   (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
   (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
-  (if (fboundp 'fringe-mode) (set-fringe-mode 0))
+  ;;(if (fboundp 'fringe-mode) (set-fringe-mode 0))
   (setq initial-frame-alist '((top . 20) (left . 300) (width . 200) (height . 80)))
 #+end_src
 
@@ -504,18 +504,20 @@ Disable line numbers for the following modes
   ;; Make it so all '.jsx' files auto load 'js-mode'
   (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-mode))
 
+  ;; turn on lsp mode
+  (add-hook 'js-mode-hook #'lsp)
+
   (defun setup-js-mode ()
     "Setup function for JavaScript"
     (interactive)
     ;; (flycheck-mode +1)
     ;; (setq flycheck-check-syntax-automatically '(save mode-enabled))
     ;; (eldoc-mode +1)
+    (require 'dap-node)
+    (dap-node-setup)
     (company-mode +1))
 
   (add-hook 'js-mode-hook #'setup-js-mode)
-
-  ;; turn on lsp mode
-  (add-hook 'js-mode-hook #'lsp)
 
   ;; Use 2 spaces when tabbing HTML elements
   (setq-default sgml-basic-offset 2)
@@ -588,6 +590,13 @@ Disable line numbers for the following modes
 ** Docker
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (use-package dockerfile-mode
+    :ensure t
+  )
+#+end_src
+
+** JenkinsFile
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (use-package jenkinsfile-mode
     :ensure t
   )
 #+end_src
