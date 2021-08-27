@@ -1,4 +1,4 @@
-#+begin_src emacs-lisp :tangle lisp/common.el
+c#+begin_src emacs-lisp :tangle lisp/common.el
   ;; supress debugger by default
   ;; (setq debug-on-error t)
   (setq user-full-name "Richard Hunter"
@@ -329,15 +329,29 @@ Here we add custom utility functions
 * Completions
 ** Orderless
 Install and configure =orderless= a completetions framework helper. I use it in tandem with the built-in =icomplete=.
-
+- Note: I've disabled this for now as it can conflict with helm
 #+begin_src emacs-lisp :tangle lisp/packages.el
-(unless (package-installed-p 'orderless)
-  (package-install 'orderless))
+;;(unless (package-installed-p 'orderless)
+;;(package-install 'orderless))
 
-(use-package orderless
-  :ensure t
-  :init (icomplete-mode) ; optional but recommended!
-  :custom (completion-styles '(orderless)))
+;;(use-package orderless
+;;  :ensure t
+;;  :init (icomplete-mode) ; optional but recommended!
+;;  :custom (completion-styles '(orderless)))
+#+end_src
+** Helm
+Helm config
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package helm-xref
+    :ensure t)
+  (use-package helm-lsp
+    :ensure t)
+  (use-package helm
+    :ensure t
+    :config
+    (define-key global-map [remap find-file] #'helm-find-files)
+    (define-key global-map [remap execute-extended-command] #'helm-M-x)
+    (define-key global-map [remap switch-to-buffer] #'helm-mini))
 #+end_src
 
 * Buffer Move
@@ -384,21 +398,14 @@ Use "F" to open all marked files. Code lifted from [[https://stackoverflow.com/q
        (let* ((fn-list (dired-get-marked-files nil arg)))
          (mapc 'find-file fn-list)))))
 #+end_src
-
 * LSP & Company
 ** LSP
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (setq package-selected-packages '(lsp-mode lsp-ui yasnippet lsp-treemacs helm-lsp company hydra avy which-key helm-xref dap-mode))
+  (setq package-selected-packages '(lsp-mode lsp-ui yasnippet lsp-treemacs company hydra avy which-key dap-mode))
   (when (cl-find-if-not #'package-installed-p package-selected-packages)
     (package-refresh-contents)
     (mapc #'package-install package-selected-packages))
 
-  (helm-mode)
-  (require 'helm-xref)
-  (define-key global-map [remap find-file] #'helm-find-files)
-  (define-key global-map [remap execute-extended-command] #'helm-M-x)
-  (define-key global-map [remap switch-to-buffer] #'helm-mini)
-  
   (which-key-mode)
 
   ;; This will turn LSP on for every programming language mode
@@ -567,6 +574,31 @@ Disable line numbers for the following modes
   ;; Load prettier in js-mode
   (require 'prettier-js)
   (add-hook 'js-mode-hook 'prettier-js-mode)
+#+end_src
+
+** Python
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (use-package python ;; mode is python-mode but package is called python
+    :hook (python-mode-hook . lsp-deferred)
+    :custom
+    ;; NOTE: Set these if Python 3 is called "python3" on your system!
+    ;; (python-shell-interpreter "python3")
+    ;; (dap-python-executable "python3")
+    (dap-python-debugger 'debugpy)
+    :config
+    (require 'dap-python))
+
+  (use-package pyvenv
+    :ensure t
+    :config
+    (pyvenv-mode 1))
+
+  (use-package lsp-python-ms
+     :ensure t
+     :init (setq lsp-python-ms-auto-install-server t)
+     :hook (python-mode-hook . (lambda ()
+                            (require 'lsp-python-ms)
+                            (lsp-deferred))))  ; or lsp-deferred
 #+end_src
 
 ** Flycheck
