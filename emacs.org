@@ -1,4 +1,4 @@
-c#+begin_src emacs-lisp :tangle lisp/common.el
+#+begin_src emacs-lisp :tangle lisp/common.el
   ;; supress debugger by default
   ;; (setq debug-on-error t)
   (setq user-full-name "Richard Hunter"
@@ -8,14 +8,33 @@ c#+begin_src emacs-lisp :tangle lisp/common.el
 * Startup Config
 ** Basic Internals
 
-Turn off mouse interface early in startup to avoid momentary display
-Additionally, hide certain elements if in GUI emacs including scroll bar, tool bar and fringes
+- Turn off mouse interface early in startup to avoid momentary display
+- hide certain elements if in GUI emacs including scroll bar, tool bar
+- set default window sizes for GUI emacs
 #+begin_src emacs-lisp :tangle lisp/common.el
   (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
   (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
   (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
-  ;;(if (fboundp 'fringe-mode) (set-fringe-mode 0))
-  (setq initial-frame-alist '((top . 20) (left . 300) (width . 200) (height . 80)))
+  ;; (if (fboundp 'fringe-mode) (set-fringe-mode 0))
+  (if (display-graphic-p)
+      (progn
+        (setq initial-frame-alist
+              '(
+                (tool-bar-lines . 0)
+                (width . 200) ; chars
+                (height . 80) ; lines
+                (left . 300)
+                (top . 20)))
+        (setq default-frame-alist
+              '(
+                (tool-bar-lines . 0)
+                (width . 200)
+                (height . 80)
+                (left . 300)
+                (top . 20))))
+    (progn
+      (setq initial-frame-alist '( (tool-bar-lines . 0)))
+      (setq default-frame-alist '( (tool-bar-lines . 0)))))
 #+end_src
 
 Require some internal libs
@@ -41,7 +60,7 @@ Activate some internal features
   (global-auto-revert-mode 1)
   (global-font-lock-mode 1)
   (global-hl-line-mode 1)
-  (global-display-line-numbers-mode 1)
+  ;; (global-display-line-numbers-mode 1)
   (show-paren-mode 1)
   (transient-mark-mode 1)
   (which-function-mode 1)
@@ -201,26 +220,47 @@ Enable smooth scroll and scroll window under mouse
 - Set default size of the window frame on load
 - Padding between buffer and line number
 #+begin_src emacs-lisp :tangle lisp/common.el
-(setq initial-frame-alist '((top . 20) (left . 300) (width . 180) (height . 70)))
+; (setq initial-frame-alist '((top . 20) (left . 300) (width . 180) (height . 70)))
 (setq linum-format "%d ")
 #+end_src
 
 ** OSX Specific Settings
 Improve appearance of title bar on osx GUI emacs, white on black
 #+begin_src emacs-lisp :tangle lisp/common.el
-(add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
-(add-to-list 'default-frame-alist '(ns-appearance . dark))
+  (add-to-list 'initial-frame-alist '(ns-transparent-titlebar . t))
+  (add-to-list 'initial-frame-alist '(ns-appearance . dark))
+  (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
+  (add-to-list 'default-frame-alist '(ns-appearance . dark))
 #+end_src
 
 ** Default Theme
 Install and configure =modus-themes=
 
-By default, use =modus-vivendi= theme, a dark theme by the talented Prot.
+By default, use =modus-vivendi= theme, a dark theme by the talented Prot. Manual and configuration details can be found [[https://protesilaos.com/modus-themes][here]].
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
-(unless (package-installed-p 'modus-themes)
-  (package-install 'modus-themes))
-(load-theme 'modus-vivendi t)
+  (use-package modus-themes
+    :ensure t
+    :init
+    (setq modus-themes-slanted-constructs t
+          modus-themes-bold-constructs nil
+          modus-themes-subtle-line-numbers t
+          modus-themes-fringes 'subtle
+          modus-themes-completions 'opinionated
+          modus-themes-mode-line '(padding accented 3d)
+          ; modus-themes-syntax '(green-strings yellow-comments faint alt-syntax)
+          modus-themes-region 'no-extend
+          modus-themes-org-agenda
+          '((header-block . (variable-pitch scale-title))
+            (header-date . (grayscale workaholic bold-today))
+            (scheduled . uniform))
+          )
+    ;; Load the theme files before enabling a theme (else you get an error).
+    (modus-themes-load-themes)
+    :config
+    (modus-themes-load-vivendi)
+    :bind ("<f6>" . modus-themes-toggle))
+
 #+end_src
 
 ** Modeline
@@ -269,23 +309,26 @@ Here we add custom utility functions
 ** Function Key Bindings
 
 #+begin_src emacs-lisp :tangle lisp/keybindings.el
-;; [F1] -- Go to a specific line number in the current buffer (file)
-(global-set-key [f1] 'goto-line)
+  ;; [F1] -- Go to a specific line number in the current buffer (file)
+  (global-set-key [f1] 'goto-line)
 
-;; [F2] -- Comment out a Marked (highlighted) region of text
-(global-set-key [f2] 'comment-region)
+  ;; [F2] -- Comment out a Marked (highlighted) region of text
+  (global-set-key [f2] 'comment-region)
 
-;; [F3] -- Comment out a Marked (highlighted) region of text
-(global-set-key [f3] 'uncomment-region)
+  ;; [F3] -- Comment out a Marked (highlighted) region of text
+  (global-set-key [f3] 'uncomment-region)
 
-;; [F4] -- Cleanup all trailing whitespace
-(global-set-key [f4] 'whitespace-cleanup)
+  ;; [F4] -- Cleanup all trailing whitespace
+  (global-set-key [f4] 'whitespace-cleanup)
 
-;; [F5] -- Switch to next buffer (file), burying current
-(global-set-key [f5] 'bury-buffer)
+  ;; [F5] -- Switch to next buffer (file), burying current
+  (global-set-key [f5] 'bury-buffer)
 
-;; [F8] -- Toggle Treemacs
-(global-set-key [f8] 'treemacs)
+  ;; [F8] -- Toggle Treemacs
+  (global-set-key [f8] 'treemacs)
+
+  ;; [F12] -- Toggle Breakpoint
+  (global-set-key [f12] 'dap-breakpoint-toggle)
 #+end_src
 
 ** Marking Regions and Navigating
@@ -334,24 +377,30 @@ Install and configure =orderless= a completetions framework helper. I use it in 
 ;;(unless (package-installed-p 'orderless)
 ;;(package-install 'orderless))
 
-;;(use-package orderless
-;;  :ensure t
-;;  :init (icomplete-mode) ; optional but recommended!
-;;  :custom (completion-styles '(orderless)))
+(use-package orderless
+  :ensure t
+  :init (icomplete-mode) ; optional but recommended!
+  :custom (completion-styles '(orderless)))
 #+end_src
 ** Helm
 Helm config
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (use-package helm-xref
-    :ensure t)
-  (use-package helm-lsp
-    :ensure t)
-  (use-package helm
-    :ensure t
-    :config
-    (define-key global-map [remap find-file] #'helm-find-files)
-    (define-key global-map [remap execute-extended-command] #'helm-M-x)
-    (define-key global-map [remap switch-to-buffer] #'helm-mini))
+;  (use-package helm
+;    :ensure t
+;    :init
+;    (setq helm-split-window-in-side-p           t ; open helm buffer inside current window, not occupy whole other window
+;          helm-move-to-line-cycle-in-source     t ; move to end or beginning of source when reaching top or bottom of source.
+;          helm-ff-search-library-in-sexp        t ; search for library in `require' and `declare-function' sexp.
+;          helm-scroll-amount                    8 ; scroll 8 lines other window using M-<next>/M-<prior>
+;          helm-ff-file-name-history-use-recentf t
+;          helm-echo-input-in-header-line t)
+;    (setq helm-autoresize-max-height 0)
+;    (setq helm-autoresize-min-height 40)
+;    (helm-autoresize-mode 1)
+;    :config
+;    (define-key global-map [remap find-file] #'helm-find-files)
+;    (define-key global-map [remap execute-extended-command] #'helm-M-x)
+;    (define-key global-map [remap switch-to-buffer] #'helm-mini))
 #+end_src
 
 * Buffer Move
@@ -401,31 +450,44 @@ Use "F" to open all marked files. Code lifted from [[https://stackoverflow.com/q
 * LSP & Company
 ** LSP
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (setq package-selected-packages '(lsp-mode lsp-ui yasnippet lsp-treemacs company hydra avy which-key dap-mode))
-  (when (cl-find-if-not #'package-installed-p package-selected-packages)
-    (package-refresh-contents)
-    (mapc #'package-install package-selected-packages))
+     (setq package-selected-packages '(lsp-mode yasnippet lsp-ui lsp-treemacs helm-lsp projectile hydra flycheck company avy which-key helm-xref json-mode))
+     (when (cl-find-if-not #'package-installed-p package-selected-packages)
+       (package-refresh-contents)
+       (mapc #'package-install package-selected-packages))
 
-  (which-key-mode)
+     (helm-mode)
+     (require 'helm-xref)
+     (define-key global-map [remap find-file] #'helm-find-files)
+     (define-key global-map [remap execute-extended-command] #'helm-M-x)
+     (define-key global-map [remap switch-to-buffer] #'helm-mini)
+     (define-key global-map (kbd "C-.") #'lsp-find-definition)  
+     (which-key-mode)
+     ;; (add-hook 'prog-mode-hook #'lsp)
+     (setq gc-cons-threshold (* 100 1024 1024)
+           read-process-output-max (* 1024 1024)
+             company-idle-delay 0.0
+             company-tooltip-align-annotations t
+             company-minimum-prefix-length 1
+             create-lockfiles nil) ;; lock files will kill `npm start'
 
-  ;; This will turn LSP on for every programming language mode
-  ;; For now isolate this to JavaScript (see Languages)
-  ;; (add-hook 'prog-mode-hook #'lsp)
-  (setq gc-cons-threshold (* 100 1024 1024)
-        read-process-output-max (* 1024 1024)
-        company-idle-delay 0.0
-        company-tooltip-align-annotations t
-        company-minimum-prefix-length 1
-        create-lockfiles nil) ;; lock files will kill `npm start'
+     (with-eval-after-load 'lsp-mode
+       (require 'dap-chrome)
+       (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
+                                             ;(yas-global-mode))
 
-  (with-eval-after-load 'lsp-mode
-    (require 'dap-chrome)
-    (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
-    (yas-global-mode))
+     ;; don't spam my repos with logfiles
+     (setenv "TSSERVER_LOG_FILE" "/tmp/tsserver.log")
 
-  ;; don't spam my repos with logfiles
-  (setenv "TSSERVER_LOG_FILE" "/tmp/tsserver.log")
+
+   ;; Enabling only some features
+   (setq dap-auto-configure-features '(sessions locals controls tooltip))
+   ;; The modes below are optional
 #+end_src
+
+** Debugging: ~dap-mode~
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+    (use-package dap-mode)
+  #+end_src
 
 * Additional Hooks
 ** Prog Mode
@@ -489,7 +551,7 @@ I prefer Ibuffer to buffer window. Pretty colors and such. The keybinding =C-b= 
 #+end_src
 
 ** Line numbers
-Disable line numbers for the following modes
+Disable line numbers for the following modes -- TODO: I have disabled line numbers by default. So it may be better to 'opt in' for line numbers on specific modes (prog-mode)
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (dolist (mode '(org-mode-hook
                   org-agenda-mode-hook
@@ -498,6 +560,7 @@ Disable line numbers for the following modes
                   eshell-mode-hook
                   shell-mode-hook
                   image-mode-hook
+                  helm-mode-hook
                   markdown-mode-hook))
     (add-hook mode (lambda() (display-line-numbers-mode -1))))
 #+end_src
@@ -590,15 +653,49 @@ Disable line numbers for the following modes
 
   (use-package pyvenv
     :ensure t
+    :commands pyenv-activate
     :config
+    (setq pyvenv-mode-line-indicator
+        '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] ")))
     (pyvenv-mode 1))
 
-  (use-package lsp-python-ms
-     :ensure t
-     :init (setq lsp-python-ms-auto-install-server t)
-     :hook (python-mode-hook . (lambda ()
-                            (require 'lsp-python-ms)
-                            (lsp-deferred))))  ; or lsp-deferred
+  (use-package lsp-pyright
+    :ensure t
+    :init (setq lsp-python-ms-auto-install-server t)
+    :hook (python-mode-hook . (lambda ()
+                                (require 'lsp-pyright)
+                                (lsp)))); or lsp-deferred
+
+  (dap-register-debug-template "Configs"
+                               (list :type "python"                                           
+                                     :args (concat
+                                            "run"
+                                            " -m" 
+                                            " --wait-for-client")
+                                     :cwd "/Users/rhunter/git/cloud/configs"
+                                     :environment-variables '(("PYTHONPATH" . "/Users/rhunter/.pyenv/versions/3.8.11/lib/python38.zip:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8/lib-dynload:/Users/rhunter/.virtualenvs/configs/lib/python3.8/site-packages:/Users/rhunter/git/cloud/configs/src"))
+                                          ;:environment-variables '(("PYTHONPATH" . "/Users/rhunter/git/cloud/configs/src"))
+                                     :target-module (expand-file-name "git/cloud/configs/src/configs/main.py")
+                                     :request "launch"
+                                     :host "0.0.0.0"
+                                     :hostName "0.0.0.0"
+                                     :name "Configs"))
+
+
+  (dap-register-debug-template "SC-AuthZ"
+                               (list :type "python"                                           
+                                     :args (concat
+                                            "run"
+                                            " -m" 
+                                            " --wait-for-client")
+                                     :cwd "/Users/rhunter/git/cloud/sc-authz"
+                                     :environment-variables '(("INTERNAL_TOKEN_KEY" . "secret")
+                                            ("PYTHONPATH" . "/Users/rhunter/.pyenv/versions/3.8.11/lib/python38.zip:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8/lib-dynload:/Users/rhunter/.virtualenvs/authz/lib/python3.8/site-packages:/Users/rhunter/git/cloud/sc-authz/src"))
+                                     :target-module (expand-file-name "git/cloud/sc-authz/src/hpe_sc_authz/main.py")
+                                     :request "launch"
+                                     :host "0.0.0.0"
+                                     :hostName "0.0.0.0"
+                                     :name "SC-AuthZ"))
 #+end_src
 
 ** Flycheck
@@ -678,58 +775,142 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
 #+end_src
 
 * Org Mode
+
+** Org-Capture
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (use-package org-bullets
-    :ensure t
-    :after org
-    :hook (org-mode . org-bullets-mode)
-    :custom
-    (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+  (setq org-directory "~/org")
+  (setq org-default-notes-file "~/org/refile.org")
 
-  ;; load language support
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((emacs-lisp . t)
-     (python . t)
-     (shell . t)))
+  ;; I use C-c c to start capture mode
+  (global-set-key (kbd "C-c c") 'org-capture)
 
-
-  (setq org-todo-keywords
-        '((sequence "TODO" "IN PROGRESS" "|" "DONE")))
-
-  ;; set maximum indentation for description lists
-  (setq org-list-description-max-indent 5)
-
-  ;; set up display of org mode docs
-
-  (defun org-mode-visual-fill ()
-    (setq visual-fill-column-width 160
-          visual-fill-column-center-text t
-          visual-fill-column-mode 1))
-
-
-  (unless (package-installed-p 'visual-fill-column)
-    (package-install 'visual-fill-column))
-
-  (use-package visual-fill-column
-    :defer t
-    :hook (org-mode-hook . org-mode-visual-fill))
-
-  ;; Set up
-  (defun org-mode-setup ()
-    (org-bullets-mode)
-    (org-indent-mode)
-    (visual-line-mode 1)
-    )
-
-  (use-package org
-    :hook ((org-mode-hook . org-mode-setup))
-    :config
-    (setq org-ellipsis " ▼"))
+  ;; Capture templates for: TODO tasks, Notes, appointments, phone calls, meetings, and org-protocol
+  (setq org-capture-templates
+        (quote (("t" "todo" entry (file "~/org/refile.org")
+                 "* TODO %?\n%U\n%a\n" :clock-in t :clock-resume t)
+                ("r" "respond" entry (file "~/org/refile.org")
+                 "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n%a\n" :clock-in t :clock-resume t :immediate-finish t)
+                ("n" "note" entry (file "~/org/refile.org")
+                 "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
+                ("w" "org-protocol" entry (file "~/org/refile.org")
+                 "* TODO Review %c\n%U\n" :immediate-finish t)
+                ("m" "Meeting" entry (file "~/org/refile.org")
+                 "* MEETING with %? :MEETING:\n%U" :clock-in t :clock-resume t))))
 
 #+end_src
 
-Mac OSX terminal swallows some keybindings, redefine
+** Agenda Setup
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+(setq org-agenda-files (quote ("~/org/notes.org"
+                               "~/org/cds/kraken-scrum-team.org"
+                               "~/org/refile.org")))
+#+end_src
+
+** Special
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (defvar org-sec-with "nobody"
+    "Value of the :with: property when doing an
+     org-sec-tag-entry. Change it with org-sec-set-with,
+     set to C-c w")
+
+  (defvar org-sec-where ""
+    "Value of the :at: property when doing an
+     org-sec-tag-entry. Change it with org-sec-set-with,
+     set to C-c W")
+
+  (defvar org-sec-with-history '()
+    "History list of :with: properties")
+
+  (defvar org-sec-where-history '()
+    "History list of :where: properties")
+
+  (defun org-sec-set-with ()
+    "Changes the value of the org-sec-with variable for use
+     in the next call of org-sec-tag-entry."
+    (interactive)
+    (setq org-sec-with (read-string "With: " nil
+                                    'org-sec-with-history "")))
+  (global-set-key "\C-cw" 'org-sec-set-with)
+
+  (defun org-sec-set-where ()
+    "Changes the value of the org-sec-where variable for use
+     in the next call of org-sec-tag-entry."
+    (interactive)
+    (setq org-sec-where
+          (read-string "Where: " nil
+                       'org-sec-where-history "")))
+  (global-set-key "\C-cW" 'org-sec-set-where)
+#+end_src
+
+** Todo states
+#+begin_src emacs-lisp :tangle lisp/hooks.el 
+
+  (setq org-todo-keywords
+        '((sequence "TODO(t)" "IN PROGRESS(p)" "|" "DONE(d)")
+          (sequence "TASK(f)"  "|" "DONE(d)")))
+
+  (setq org-todo-keyword-faces
+        '(("TODO" . (:foreground "DarkOrange1" :weight bold))
+          ("IN PROGRESS" . (:foreground "sea green"))
+          ("DONE" . (:foreground "light sea green"))
+          ("TASK" . (:foreground "yellow"))))
+#+end_src
+
+** Visual settinngs
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+    ;; set maximum indentation for description lists
+    (setq org-list-description-max-indent 5)
+
+    ;; set up display of org mode docs
+    (defun org-mode-visual-fill ()
+      (setq visual-fill-column-width 160
+            visual-fill-column-center-text t
+            visual-fill-column-mode 1))
+
+    (unless (package-installed-p 'visual-fill-column)
+      (package-install 'visual-fill-column))
+
+    (use-package visual-fill-column
+      :defer t
+      :hook (org-mode-hook . org-mode-visual-fill))
+
+    ;; Set up
+    (defun org-mode-setup ()
+      (org-bullets-mode)
+      (org-indent-mode)
+      (visual-line-mode 1)
+      )
+    #+end_src
+
+** Bootstrap Org
+    #+begin_src emacs-lisp :tangle lisp/hooks.el
+    (use-package org
+      :hook ((org-mode-hook . org-mode-setup))
+      :config
+      (setq org-ellipsis " ▼"))
+    #+end_src
+
+
+
+** Org Bullets
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (use-package org-bullets
+      :ensure t
+      :after org
+      :hook (org-mode . org-bullets-mode)
+      :custom
+      (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+    ;; load language support
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((emacs-lisp . t)
+       (python . t)
+       (shell . t)))
+#+end_src
+
+** Org Mode Custom Keybindings
+macOS swallows certain keybindings in terminal mode. Redfining the most important ones to me here
 #+begin_src emacs-lisp :tangle lisp/keybindings.el
 (global-set-key (kbd "C-c y") 'org-insert-structure-template)
 #+end_src
@@ -747,6 +928,11 @@ Pull =magit= and launch it with ~C-x g~
   (global-set-key (kbd "C-x g") 'magit-status)
 #+end_src
 
+** ediff
+#+begin_src emacs-lisp :tangle lisp/common.el
+  (custom-set-variables
+   '(ediff-split-window-function (quote split-window-horizontally)))
+#+end_src
 * Custom Interface Interactions
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
