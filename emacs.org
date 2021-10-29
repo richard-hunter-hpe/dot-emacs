@@ -120,8 +120,8 @@ Auto refresh buffers
 
 #+begin_src emacs-lisp :tangle lisp/common.el
   ;; Disable the *Messages* Buffer
-  (setq-default message-log-max nil)
-  (kill-buffer "*Messages*")
+  ;; (setq-default message-log-max nil)
+  ;; (kill-buffer "*Messages*")
 
   ;; Disable the *Completions* buffer
   (add-hook 'minibuffer-exit-hook
@@ -141,7 +141,7 @@ Set PATH for GUI emacs
 
 ** UX Customizations
 #+begin_src emacs-lisp :tangle lisp/common.el
-  ;; don't auto split vertically
+    ;; don't auto split vertically
   (setq split-height-threshold nil)
 
   ;; (require 'move-text)
@@ -159,8 +159,17 @@ Set PATH for GUI emacs
   ;; Don't ring the bell
   (setq ring-bell-function 'ignore)
 
+  ;; default font
+  (set-frame-font "Menlo 14" nil t)
 
+  ;; scale text in smallerl steps
+  ;; (setq text-scale-mode-step 1.1)
 
+  ;; set face size of minibuffer
+  (add-hook 'minibuffer-setup-hook 'my-minibuffer-setup)
+  (defun my-minibuffer-setup ()
+         (set (make-local-variable 'face-remapping-alist)
+            '((default :height 1.4))))
 #+end_src
 * Package System Setup
 ** Setup the package manager
@@ -250,6 +259,9 @@ By default, use =modus-vivendi= theme, a dark theme by the talented Prot. Manual
           modus-themes-mode-line '(padding accented 3d)
           ; modus-themes-syntax '(green-strings yellow-comments faint alt-syntax)
           modus-themes-region 'no-extend
+          ;; modus-themes-vivendi-color-overrides
+          ;;   '((bg-main . "#1d2021")
+          ;;    (fg-main . "#c2c2c2"))
           modus-themes-org-agenda
           '((header-block . (variable-pitch scale-title))
             (header-date . (grayscale workaholic bold-today))
@@ -435,6 +447,16 @@ Also auto refresh dired, but be quiet about it
 (setq auto-revert-verbose nil)
 #+end_src
 
+** Debugging: ~dap-mode~
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (use-package dap-mode
+    :ensure t
+    :custom
+      (dap-auto-configure-features '(sessions locals controls tooltip))
+    :config 
+    )
+  #+end_src
+
 ** Custom Functions
 Use "F" to open all marked files. Code lifted from [[https://stackoverflow.com/questions/1110118/in-emacs-dired-how-to-find-visit-multiple-files][here]].
 #+begin_src emacs-lisp :tangle lisp/hooks.el
@@ -450,45 +472,63 @@ Use "F" to open all marked files. Code lifted from [[https://stackoverflow.com/q
 * LSP & Company
 ** LSP
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-     (setq package-selected-packages '(lsp-mode yasnippet lsp-ui lsp-treemacs helm-lsp projectile hydra flycheck company avy which-key helm-xref json-mode))
-     (when (cl-find-if-not #'package-installed-p package-selected-packages)
-       (package-refresh-contents)
-       (mapc #'package-install package-selected-packages))
+   (setq package-selected-packages '(lsp-mode yasnippet lsp-ui lsp-treemacs helm-lsp projectile hydra flycheck company avy which-key helm-xref json-mode))
+   (when (cl-find-if-not #'package-installed-p package-selected-packages)
+     (package-refresh-contents)
+     (mapc #'package-install package-selected-packages))
 
-     (helm-mode)
-     (require 'helm-xref)
-     (define-key global-map [remap find-file] #'helm-find-files)
-     (define-key global-map [remap execute-extended-command] #'helm-M-x)
-     (define-key global-map [remap switch-to-buffer] #'helm-mini)
-     (define-key global-map (kbd "C-.") #'lsp-find-definition)  
-     (which-key-mode)
-     ;; (add-hook 'prog-mode-hook #'lsp)
-     (setq gc-cons-threshold (* 100 1024 1024)
-           read-process-output-max (* 1024 1024)
-             company-idle-delay 0.0
-             company-tooltip-align-annotations t
-             company-minimum-prefix-length 1
-             create-lockfiles nil) ;; lock files will kill `npm start'
+   (helm-mode)
+   (require 'helm-xref)
 
-     (with-eval-after-load 'lsp-mode
-       (require 'dap-chrome)
-       (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
-                                             ;(yas-global-mode))
+  (defun helm-buffer-face-mode ()
+    "Helm buffer face"
+    (interactive)
+    (with-helm-buffer
+      (setq line-spacing 2)
+      (buffer-face-set '(:family "Source Code Pro" :height 150))))
 
-     ;; don't spam my repos with logfiles
-     (setenv "TSSERVER_LOG_FILE" "/tmp/tsserver.log")
+   (add-hook 'helm-update-hook 'helm-buffer-face-mode)
+
+   (define-key global-map [remap find-file] #'helm-find-files)
+   (define-key global-map [remap execute-extended-command] #'helm-M-x)
+   (define-key global-map [remap switch-to-buffer] #'helm-mini)
+   (define-key global-map (kbd "C-.") #'lsp-find-definition)  
+   (which-key-mode)
+   ;; (add-hook 'prog-mode-hook #'lsp)
+   (setq gc-cons-threshold (* 100 1024 1024)
+         read-process-output-max (* 1024 1024)
+           company-idle-delay 0.0
+           company-tooltip-align-annotations t
+           company-minimum-prefix-length 1
+           create-lockfiles nil) ;; lock files will kill `npm start'
+
+   (with-eval-after-load 'lsp-mode
+     (require 'dap-chrome)
+     (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
+                                           ;(yas-global-mode))
+
+   ;; don't spam my repos with logfiles
+   (setenv "TSSERVER_LOG_FILE" "/tmp/tsserver.log")
 
 
-   ;; Enabling only some features
-   (setq dap-auto-configure-features '(sessions locals controls tooltip))
-   ;; The modes below are optional
+   (setq lsp-progress-via-spinner nil)
+   ;; hide lsp ui code actions
+   (setq lsp-ui-sideline-show-code-actions nil)
 #+end_src
 
-** Debugging: ~dap-mode~
-#+begin_src emacs-lisp :tangle lisp/hooks.el
-    (use-package dap-mode)
-  #+end_src
+*** LSP UI
+[[https://github.com/emacs-lsp/lsp-ui][github]]
 
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+;; TODO
+#+end_src
+
+* TRAMP
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (use-package docker-tramp
+    :ensure t)
+ 
+#+end_src
 * Additional Hooks
 ** Prog Mode
 Set the =prog-mode= hook. =prog-mode= is a major mode provided by Emacs. Typically, it is not used directly, instead many programming-related major modes are derived from this mode. Any hooks defined here will be applied to all modes that derive from it, inluding =js-mode= and more.
@@ -566,77 +606,100 @@ Disable line numbers for the following modes -- TODO: I have disabled line numbe
 #+end_src
 
 * Languages
-** JavaScript
+** TypeScript
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  ;; Make it so all '.js' files auto load 'js-mode'
-  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
+  (use-package typescript-mode
+    :ensure t
+    :hook (typescript-mode-hook . lsp-deferred)
+    )
 
-  ;; Make it so all '.jsx' files auto load 'js-mode'
-  (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-mode))
+  ;; Make it so all '.ts' files auto load 'typescript-mode'
+  (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
 
-  ;; turn on lsp mode
-  (add-hook 'js-mode-hook #'lsp)
-
-  (defun setup-js-mode ()
-    "Setup function for JavaScript"
-    (interactive)
-    ;; (flycheck-mode +1)
-    ;; (setq flycheck-check-syntax-automatically '(save mode-enabled))
-    ;; (eldoc-mode +1)
-    (require 'dap-node)
-    (dap-node-setup)
-    (company-mode +1))
-
-  (add-hook 'js-mode-hook #'setup-js-mode)
-
-  ;; Use 2 spaces when tabbing HTML elements
-  (setq-default sgml-basic-offset 2)
+  ;; Make it so all '.tsx' files auto load 'typescript-mode'
+  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . typescript-mode))
 
   ;; Use 2 spaces when tabbing JS elements
-  (setq-default js-indent-level 2)
+  (setq-default typescript-indent-level 2)
 
   ;; Indent switch statements normally
-  (setq js2-indent-switch-body t)
+  (setq js2-indent-switch-clauses t)
+
+#+end_src
+** JavaScript
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+    ;; Make it so all '.js' files auto load 'js-mode'
+    (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
+
+    ;; Make it so all '.jsx' files auto load 'js-mode'
+    (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-mode))
+
+    ;; turn on lsp mode
+    (add-hook 'js-mode-hook #'lsp)
+
+    (defun setup-js-mode ()
+      "Setup function for JavaScript"
+      (interactive)
+      ;; (flycheck-mode +1)
+      ;; (setq flycheck-check-syntax-automatically '(save mode-enabled))
+      ;; (eldoc-mode +1)
+      (define-key global-map [remap js-find-symbol] #'lsp-ui-peek-find-definitions)
+      (define-key global-map [remap xref-find-references] #'lsp-ui-peek-find-references)
+      (require 'dap-node)
+      (dap-node-setup)
+      (company-mode +1))
+
+    (add-hook 'js-mode-hook #'setup-js-mode)
+
+    ;; Use 2 spaces when tabbing HTML elements
+    (setq-default sgml-basic-offset 2)
+
+    ;; Use 2 spaces when tabbing JS elements
+    (setq-default js-indent-level 2)
+
+    ;; Indent switch statements normally
+    (setq js2-indent-switch-body t)
 
 
-  (setq-default flycheck-disabled-checkers '(lsp))
+    (setq-default flycheck-disabled-checkers '(lsp))
 
-  ;; use eslint in js mode over lsp
-  (add-hook 'js2-mode-local-vars-hook
-            (lambda ()
-              (when (flycheck-may-enable-checker 'javascript-eslint)
-                (flycheck-select-checker 'javascript-eslint))))
+    ;; use eslint in js mode over lsp
+    (add-hook 'js2-mode-local-vars-hook
+              (lambda ()
+                (when (flycheck-may-enable-checker 'javascript-eslint)
+                  (flycheck-select-checker 'javascript-eslint))))
 
-  ;; use eslint installed locally
-  (defun my/use-eslint-from-node-modules ()
-    (let* ((root (locate-dominating-file
-                  (or (buffer-file-name) default-directory)
-                  "node_modules"))
-           (eslint
-            (and root
-                 (expand-file-name "node_modules/.bin/eslint"
-                                   root))))
-      (when (and eslint (file-executable-p eslint))
-        (setq-local flycheck-javascript-eslint-executable eslint))))
+    ;; use eslint installed locally
+    (defun my/use-eslint-from-node-modules ()
+      (let* ((root (locate-dominating-file
+                    (or (buffer-file-name) default-directory)
+                    "node_modules"))
+             (eslint
+              (and root
+                   (expand-file-name "node_modules/.bin/eslint"
+                                     root))))
+        (when (and eslint (file-executable-p eslint))
+          (setq-local flycheck-javascript-eslint-executable eslint))))
 
-  (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
+    (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
 
 
-  ;; Local node modules located here
+    ;; Local node modules located here
 
-  (unless (package-installed-p 'add-node-modules-path)
-    (package-install 'add-node-modules-path))
+    (unless (package-installed-p 'add-node-modules-path)
+      (package-install 'add-node-modules-path))
 
-  (require 'add-node-modules-path)
-  (eval-after-load 'js-mode
-    (add-hook 'js-mode-hook #'add-node-modules-path))
+    (require 'add-node-modules-path)
+    (eval-after-load 'js-mode
+      (add-hook 'js-mode-hook #'add-node-modules-path))
 
-  (unless (package-installed-p 'prettier-js)
-    (package-install 'prettier-js))
+    (unless (package-installed-p 'prettier-js)
+      (package-install 'prettier-js))
 
-  ;; Load prettier in js-mode
-  (require 'prettier-js)
-  (add-hook 'js-mode-hook 'prettier-js-mode)
+    ;; Load prettier in js-mode
+    (require 'prettier-js)
+    (add-hook 'js-mode-hook 'prettier-js-mode)
+    (add-hook 'typescript-mode-hook 'prettier-js-mode)
 #+end_src
 
 ** Python
@@ -779,31 +842,52 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
 ** Org-Capture
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (setq org-directory "~/org")
-  (setq org-default-notes-file "~/org/refile.org")
+  (setq org-default-notes-file "~/org/refile.org")                           
 
-  ;; I use C-c c to start capture mode
-  (global-set-key (kbd "C-c c") 'org-capture)
+  (setq org-refile-targets (quote (("~/org/kraken.org" :maxlevel . 2)
+                                   ("~/org/notes.org" :level . 1)
+                                   ("~/org/refile.org" :level . 1))))
 
-  ;; Capture templates for: TODO tasks, Notes, appointments, phone calls, meetings, and org-protocol
-  (setq org-capture-templates
-        (quote (("t" "todo" entry (file "~/org/refile.org")
-                 "* TODO %?\n%U\n%a\n" :clock-in t :clock-resume t)
-                ("r" "respond" entry (file "~/org/refile.org")
-                 "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n%a\n" :clock-in t :clock-resume t :immediate-finish t)
-                ("n" "note" entry (file "~/org/refile.org")
-                 "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
-                ("w" "org-protocol" entry (file "~/org/refile.org")
-                 "* TODO Review %c\n%U\n" :immediate-finish t)
-                ("m" "Meeting" entry (file "~/org/refile.org")
-                 "* MEETING with %? :MEETING:\n%U" :clock-in t :clock-resume t))))
+    ;; I use C-c c to start capture mode
+    (global-set-key (kbd "C-c c") 'org-capture)
+
+    ;; Capture templates for: TODO tasks, Notes, appointments, phone calls, meetings, and org-protocol
+    (setq org-capture-templates
+          (quote (("t" "todo" entry (file "~/org/refile.org")
+                   "* TODO %?\n%U\n%a\n" :clock-in t :clock-resume t)
+                  ("r" "respond" entry (file "~/org/refile.org")
+                   "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n%a\n" :clock-in t :clock-resume t :immediate-finish t)
+                  ("n" "note" entry (file "~/org/refile.org")
+                   "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
+                  ("w" "org-protocol" entry (file "~/org/refile.org")
+                   "* TODO Review %c\n%U\n" :immediate-finish t)
+                  ("m" "Meeting" entry (file "~/org/refile.org")
+                   "* MEETING with %? :MEETING:\n%U" :clock-in t :clock-resume t))))
 
 #+end_src
 
 ** Agenda Setup
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-(setq org-agenda-files (quote ("~/org/notes.org"
-                               "~/org/cds/kraken-scrum-team.org"
-                               "~/org/refile.org")))
+         (setq org-agenda-files (quote ("~/org/notes.org"
+                                        "~/org/kraken.org"
+                                        "~/org/refile.org")))
+         (setq org-agenda-sticky t)
+         (setq org-agenda-inhibit-startup nil)
+
+         ;; Compact the block agenda view (disabled)
+         (setq org-agenda-compact-blocks nil)
+         (setq org-deadline-warning-days 10)
+
+  (setq org-agenda-custom-commands
+        '(("W" "Weekly Review"
+           ((agenda "" ((org-agenda-span 7)))
+            (todo "GOAL"
+                  ((org-agenda-overriding-header "Sprint Goals")))
+            (todo "TODO|IN PROGRESS"
+                  ((org-agenda-overriding-header "My Todos")))
+            (todo "TASK"
+                  ((org-agenda-overriding-header "Team Tasks")))
+            ))))
 #+end_src
 
 ** Special
@@ -847,40 +931,84 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
 
   (setq org-todo-keywords
         '((sequence "TODO(t)" "IN PROGRESS(p)" "|" "DONE(d)")
-          (sequence "TASK(f)"  "|" "DONE(d)")))
+          (sequence "TASK(f)"  "|" "DONE(d)")
+          (sequence "GOAL(g)" "|" "DELIVERED(y)")))
 
   (setq org-todo-keyword-faces
         '(("TODO" . (:foreground "DarkOrange1" :weight bold))
           ("IN PROGRESS" . (:foreground "sea green"))
           ("DONE" . (:foreground "light sea green"))
-          ("TASK" . (:foreground "yellow"))))
+          ("TASK" . (:foreground "magenta"))))
 #+end_src
 
-** Visual settinngs
+** Visual settings
+
+Set maximum indentation for description lists
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-    ;; set maximum indentation for description lists
-    (setq org-list-description-max-indent 5)
+  (setq org-list-description-max-indent 5)
+#+end_src
 
-    ;; set up display of org mode docs
-    (defun org-mode-visual-fill ()
-      (setq visual-fill-column-width 160
-            visual-fill-column-center-text t
-            visual-fill-column-mode 1))
+Hude emphasis markup (e.g. /.../ for italics, *...* for bold, etc.)
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (setq org-hide-emphasis-markers t)
+#+end_src
 
-    (unless (package-installed-p 'visual-fill-column)
-      (package-install 'visual-fill-column))
+Visual fill mode, visual fill column mode settings
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  ;; set up display of org mode docs
+  (defun org-mode-visual-fill ()
+    (setq visual-fill-column-width 160
+          visual-fill-column-center-text t
+          visual-fill-column-mode 1))
 
-    (use-package visual-fill-column
-      :defer t
-      :hook (org-mode-hook . org-mode-visual-fill))
+  ;; (unless (package-installed-p 'visual-fill-column)
+  ;;   (package-install 'visual-fill-column))
 
-    ;; Set up
-    (defun org-mode-setup ()
-      (org-bullets-mode)
-      (org-indent-mode)
-      (visual-line-mode 1)
-      )
-    #+end_src
+  (use-package visual-fill-column
+    :ensure t
+    :defer t
+    :hook (org-mode-hook . org-mode-visual-fill))
+#+end_src
+
+Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beautifying-org-mode-in-emacs/]]
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+   ;; (let* ((variable-tuple
+   ;;          (cond ((x-list-fonts "Optima Regular")  '(:font "Optima Regular"))
+   ;;                ((x-list-fonts "Lucida Grande")   '(:font "Lucida Grande"))
+   ;;                ((x-list-fonts "Verdana")         '(:font "Verdana"))
+   ;;                ((x-family-fonts "Sans Serif")    '(:family "Sans Serif"))
+   ;;                (nil (warn "Cannot find a Sans Serif Font.  Install Source Sans Pro."))))
+   ;;         (base-font-color     (face-foreground 'default nil 'default))
+   ;;         (headline           `(face-foreground 'default nil 'default)))
+
+   ;;    (custom-theme-set-faces
+   ;;     'user
+   ;;     `(org-level-8 ((t (,@headline ,@variable-tuple))))
+   ;;     `(org-level-7 ((t (,@headline ,@variable-tuple))))
+   ;;     `(org-level-6 ((t (,@headline ,@variable-tuple))))
+   ;;     `(org-level-5 ((t (,@headline ,@variable-tuple))))
+   ;;     `(org-level-4 ((t (,@headline ,@variable-tuple :height 1.03))))
+   ;;     `(org-level-3 ((t (,@headline ,@variable-tuple :height 1.05))))
+   ;;     `(org-level-2 ((t (,@headline ,@variable-tuple :height 1.07))))
+   ;;     `(org-level-1 ((t (,@headline ,@variable-tuple :height 1.1))))
+   ;;     `(org-document-title ((t (,@headline ,@variable-tuple :height 1.2 :underline nil))))))
+
+   ;; '(variable-pitch ((t (:family "ETBembo" :height 180 :weight thin))))
+   ;;  '(fixed-pitch ((t ( :family "Fira Code Retina" :height 160)))))
+
+   ;; (add-hook 'org-mode-hook 'variable-pitch-mode)
+   #+end_src
+
+
+Define Setup
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (defun org-mode-setup ()
+    (org-bullets-mode)
+    (org-indent-mode)
+    (visual-line-mode 1)
+    )
+#+end_src
+
 
 ** Bootstrap Org
     #+begin_src emacs-lisp :tangle lisp/hooks.el
@@ -890,23 +1018,34 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
       (setq org-ellipsis " ▼"))
     #+end_src
 
-
-
 ** Org Bullets
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (use-package org-bullets
-      :ensure t
-      :after org
-      :hook (org-mode . org-bullets-mode)
-      :custom
-      (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+        (use-package org-bullets
+            :ensure t
+            :after org
+            :hook (org-mode . org-bullets-mode)
+            :custom
+            (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
-    ;; load language support
-    (org-babel-do-load-languages
-     'org-babel-load-languages
-     '((emacs-lisp . t)
-       (python . t)
-       (shell . t)))
+
+  (use-package plantuml-mode
+    :ensure t
+    )
+
+  (setq plantuml-output-type "png")
+  (setq org-plantuml-jar-path "~/plantuml.jar")
+  (setq plantuml-jar-path "~/plantuml.jar")
+  (setq plantuml-default-exec-mode 'jar)
+
+  ;; load language support
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (shell . t)
+     (js . t)
+     (plantuml . t) 
+     ))
 #+end_src
 
 ** Org Mode Custom Keybindings
@@ -936,6 +1075,9 @@ Pull =magit= and launch it with ~C-x g~
 * Custom Interface Interactions
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
+  (defun rh-reload-emacs-init ()
+    (interactive)
+    (load-file "~/.emacs.d/init.el"))
   ;; (unless (package-installed-p 'goto-last-change)
   ;;   (package-install 'goto-last-change))
 
