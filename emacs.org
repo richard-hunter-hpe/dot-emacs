@@ -44,7 +44,7 @@ Require some internal libs
 #+end_src
 
 Activate some internal features
-- auto-compression:: automatiaclly handle decompressing/compressing of zipped files
+- auto-compression:: automatically handle decompressing/compressing of zipped files
 - column-number-mode:: display column number in the mode line
 - global-auto-revert-mode:: automatically update buffers when they are changed on disk
 - global-font-lock-mode:: syntax highlighting
@@ -89,7 +89,8 @@ Location and settings for temp files
       version-control t
       delete-old-versions t
       kept-new-versions 20
-      kept-old-versions 5)
+      kept-old-versions 5
+)
 #+end_src
 
 Startup message and scratch buffer setup
@@ -131,6 +132,11 @@ Auto refresh buffers
                       (kill-buffer buffer)))))
 #+end_src
 
+Kill all processes automatically on exit w/out prompting
+#+begin_src emacs-lisp :tnagle lisp/common.el
+(setq confirm-kill-processes nil)
+#+end_src
+
 ** GUI Emacs add env path for gui
 Set PATH for GUI emacs
 #+begin_src emacs-lisp :tangle lisp/common.el
@@ -169,7 +175,7 @@ Set PATH for GUI emacs
   (add-hook 'minibuffer-setup-hook 'my-minibuffer-setup)
   (defun my-minibuffer-setup ()
          (set (make-local-variable 'face-remapping-alist)
-            '((default :height 1.4))))
+            '((default :height 1.3))))
 #+end_src
 * Package System Setup
 ** Setup the package manager
@@ -348,7 +354,6 @@ Here we add custom utility functions
   ;; [Ctrl+c -> TAB] -- Mark the entire file
   ;; Hint: Useful for auto-formatting the entire file by pressing (Ctrl+c -> TAB -> TAB)
   (global-set-key (kbd "C-c TAB") 'mark-whole-buffer)
-
   (global-set-key (kbd "<C-s-up>")     'buf-move-up)
   (global-set-key (kbd "<C-s-down>")   'buf-move-down)
   (global-set-key (kbd "<C-s-left>")   'buf-move-left)
@@ -379,16 +384,20 @@ Here we add custom utility functions
   ;; [Ctrl+x -> Ctrl+b -- Open iBuffer instead of buffers]
   (global-set-key (kbd "C-x C-b")  'ibuffer)
 
+  ;; By default, killing a word backward will put it in the ring, I don't want this
+  (defun backward-kill-word-noring (arg)
+    (interactive "p")
+    (let ((kr kill-ring))
+      (backward-kill-word arg)
+      (setq kill-ring (reverse kr))))
 
+  (global-set-key (kbd "C-M-<backspace>") 'backward-kill-word-noring)
 #+end_src
 * Completions
 ** Orderless
 Install and configure =orderless= a completetions framework helper. I use it in tandem with the built-in =icomplete=.
 - Note: I've disabled this for now as it can conflict with helm
 #+begin_src emacs-lisp :tangle lisp/packages.el
-;;(unless (package-installed-p 'orderless)
-;;(package-install 'orderless))
-
 (use-package orderless
   :ensure t
   :init (icomplete-mode) ; optional but recommended!
@@ -447,7 +456,7 @@ Also auto refresh dired, but be quiet about it
 (setq auto-revert-verbose nil)
 #+end_src
 
-** Debugging: ~dap-mode~
+* Debugging: ~dap-mode~
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (use-package dap-mode
     :ensure t
@@ -457,7 +466,7 @@ Also auto refresh dired, but be quiet about it
     )
   #+end_src
 
-** Custom Functions
+* Custom Functions
 Use "F" to open all marked files. Code lifted from [[https://stackoverflow.com/questions/1110118/in-emacs-dired-how-to-find-visit-multiple-files][here]].
 #+begin_src emacs-lisp :tangle lisp/hooks.el
 (eval-after-load "dired"
@@ -524,6 +533,7 @@ Use "F" to open all marked files. Code lifted from [[https://stackoverflow.com/q
 #+end_src
 
 * TRAMP
+TRAMP can be used for editing files remotely. =docker-tramp= allows for editing files within docker containers.
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (use-package docker-tramp
     :ensure t)
@@ -605,103 +615,109 @@ Disable line numbers for the following modes -- TODO: I have disabled line numbe
     (add-hook mode (lambda() (display-line-numbers-mode -1))))
 #+end_src
 
-* Languages
-** TypeScript
+** SmartParens
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (use-package typescript-mode
-    :ensure t
-    :hook (typescript-mode-hook . lsp-deferred)
-    )
-
-  ;; Make it so all '.ts' files auto load 'typescript-mode'
-  (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
-
-  ;; Make it so all '.tsx' files auto load 'typescript-mode'
-  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . typescript-mode))
-
-  ;; Use 2 spaces when tabbing JS elements
-  (setq-default typescript-indent-level 2)
-
-  ;; Indent switch statements normally
-  (setq js2-indent-switch-clauses t)
-
+  (use-package smartparens
+    :ensure t)
 #+end_src
+
+* Languages
 ** JavaScript
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-    ;; Make it so all '.js' files auto load 'js-mode'
-    (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
+  ;; Make it so all '.js' files auto load 'js-mode'
+  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
 
-    ;; Make it so all '.jsx' files auto load 'js-mode'
-    (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-mode))
+  ;; Make it so all '.jsx' files auto load 'js-mode'
+  (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-jsx-mode))
 
-    ;; turn on lsp mode
-    (add-hook 'js-mode-hook #'lsp)
+  ;; turn on lsp mode
+  (add-hook 'js-mode-hook #'lsp)
 
-    (defun setup-js-mode ()
-      "Setup function for JavaScript"
-      (interactive)
-      ;; (flycheck-mode +1)
-      ;; (setq flycheck-check-syntax-automatically '(save mode-enabled))
-      ;; (eldoc-mode +1)
-      (define-key global-map [remap js-find-symbol] #'lsp-ui-peek-find-definitions)
-      (define-key global-map [remap xref-find-references] #'lsp-ui-peek-find-references)
-      (require 'dap-node)
-      (dap-node-setup)
-      (company-mode +1))
+  (defun setup-js-mode ()
+    "Setup function for JavaScript"
+    (interactive)
+    ;; (flycheck-mode +1)
+    ;; (setq flycheck-check-syntax-automatically '(save mode-enabled))
+    ;; (eldoc-mode +1)
+    (define-key global-map [remap js-find-symbol] #'lsp-ui-peek-find-definitions)
+    (define-key global-map [remap xref-find-references] #'lsp-ui-peek-find-references)
+    (require 'dap-node)
+    (dap-node-setup)
+    (company-mode +1))
 
-    (add-hook 'js-mode-hook #'setup-js-mode)
+  (add-hook 'js-mode-hook #'setup-js-mode)
 
-    ;; Use 2 spaces when tabbing HTML elements
-    (setq-default sgml-basic-offset 2)
+  ;; Use 2 spaces when tabbing HTML elements
+  (setq-default sgml-basic-offset 2)
 
-    ;; Use 2 spaces when tabbing JS elements
-    (setq-default js-indent-level 2)
+  ;; Use 2 spaces when tabbing JS elements
+  (setq-default js-indent-level 2)
 
-    ;; Indent switch statements normally
-    (setq js2-indent-switch-body t)
+  ;; Indent switch statements normally
+  (setq js2-indent-switch-body t)
+
+  (add-hook 'js-mode-hook #'smartparens-mode)
+
+  (setq-default flycheck-disabled-checkers '(lsp))
+
+  ;; use eslint in js mode over lsp
+  (add-hook 'js2-mode-local-vars-hook
+            (lambda ()
+              (when (flycheck-may-enable-checker 'javascript-eslint)
+                (flycheck-select-checker 'javascript-eslint))))
+
+  ;; use eslint installed locally
+  (defun my/use-eslint-from-node-modules ()
+    (let* ((root (locate-dominating-file
+                  (or (buffer-file-name) default-directory)
+                  "node_modules"))
+           (eslint
+            (and root
+                 (expand-file-name "node_modules/.bin/eslint"
+                                   root))))
+      (when (and eslint (file-executable-p eslint))
+        (setq-local flycheck-javascript-eslint-executable eslint))))
+
+  (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
 
 
-    (setq-default flycheck-disabled-checkers '(lsp))
+  ;; Local node modules located here
 
-    ;; use eslint in js mode over lsp
-    (add-hook 'js2-mode-local-vars-hook
-              (lambda ()
-                (when (flycheck-may-enable-checker 'javascript-eslint)
-                  (flycheck-select-checker 'javascript-eslint))))
+  (unless (package-installed-p 'add-node-modules-path)
+    (package-install 'add-node-modules-path))
 
-    ;; use eslint installed locally
-    (defun my/use-eslint-from-node-modules ()
-      (let* ((root (locate-dominating-file
-                    (or (buffer-file-name) default-directory)
-                    "node_modules"))
-             (eslint
-              (and root
-                   (expand-file-name "node_modules/.bin/eslint"
-                                     root))))
-        (when (and eslint (file-executable-p eslint))
-          (setq-local flycheck-javascript-eslint-executable eslint))))
+  (require 'add-node-modules-path)
+  (eval-after-load 'js-mode
+    (add-hook 'js-mode-hook #'add-node-modules-path))
 
-    (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
+  (unless (package-installed-p 'prettier-js)
+    (package-install 'prettier-js))
 
-
-    ;; Local node modules located here
-
-    (unless (package-installed-p 'add-node-modules-path)
-      (package-install 'add-node-modules-path))
-
-    (require 'add-node-modules-path)
-    (eval-after-load 'js-mode
-      (add-hook 'js-mode-hook #'add-node-modules-path))
-
-    (unless (package-installed-p 'prettier-js)
-      (package-install 'prettier-js))
-
-    ;; Load prettier in js-mode
-    (require 'prettier-js)
-    (add-hook 'js-mode-hook 'prettier-js-mode)
-    (add-hook 'typescript-mode-hook 'prettier-js-mode)
+  ;; Load prettier in js-mode
+  (require 'prettier-js)
+  (add-hook 'js-mode-hook 'prettier-js-mode)
+  (add-hook 'typescript-mode-hook 'prettier-js-mode)
 #+end_src
 
+** TypeScript
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+    (use-package typescript-mode
+      :ensure t
+      :hook (typescript-mode-hook . lsp-deferred))
+
+    ;; Make it so all '.ts' files auto load 'typescript-mode'
+    (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
+
+    ;; Make it so all '.tsx' files auto load 'typescript-mode'
+    (add-to-list 'auto-mode-alist '("\\.tsx\\'" . typescript-mode))
+
+    ;; Use 2 spaces when tabbing JS elements
+    (setq-default typescript-indent-level 2)
+
+    ;; Indent switch statements normally
+    (setq js2-indent-switch-clauses t)
+
+#+end_src
 ** Python
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (use-package python ;; mode is python-mode but package is called python
@@ -713,6 +729,8 @@ Disable line numbers for the following modes -- TODO: I have disabled line numbe
     (dap-python-debugger 'debugpy)
     :config
     (require 'dap-python))
+
+  ;; (add-hook 'python-mode-hook . '(add-hook 'after-save-hook 'whitespace-cleanup))
 
   (use-package pyvenv
     :ensure t
@@ -838,7 +856,6 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
 #+end_src
 
 * Org Mode
-
 ** Org-Capture
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (setq org-directory "~/org")
@@ -1020,12 +1037,12 @@ Define Setup
 
 ** Org Bullets
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-        (use-package org-bullets
-            :ensure t
-            :after org
-            :hook (org-mode . org-bullets-mode)
-            :custom
-            (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+  (use-package org-bullets
+    :ensure t
+    :after org
+    :hook (org-mode . org-bullets-mode)
+    :custom
+    (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 
   (use-package plantuml-mode
@@ -1036,6 +1053,9 @@ Define Setup
   (setq org-plantuml-jar-path "~/plantuml.jar")
   (setq plantuml-jar-path "~/plantuml.jar")
   (setq plantuml-default-exec-mode 'jar)
+
+  ;; Make it so all '.puml' files auto load 'plantuml-mode'
+  (add-to-list 'auto-mode-alist '("\\.puml\\'" . plantuml-mode))
 
   ;; load language support
   (org-babel-do-load-languages
@@ -1088,7 +1108,6 @@ Pull =magit= and launch it with ~C-x g~
 
 * Bootstrap
 We create a bootstrap file to load all the lisp files that were generated by the code blocks above
-
 #+begin_src emacs-lisp :tangle emacs.el
   (add-to-list 'load-path "~/.emacs.d/lisp")
   (load-library "common")
@@ -1097,7 +1116,7 @@ We create a bootstrap file to load all the lisp files that were generated by the
   (load-library "keybindings")
 #+end_src
 
-
+* Finally
 #+begin_quote
 All we can do is try.
 #+end_quote
