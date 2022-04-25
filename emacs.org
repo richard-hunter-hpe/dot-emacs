@@ -53,7 +53,7 @@ Activate some internal features
 - show-paren-mode:: highlight matching parens/brackets etc
 - transient-mark-mode:: highlighting regions
 - which-function-mode:: display current function name in the mode line
-  
+
 #+begin_src emacs-lisp :tangle lisp/common.el
   (auto-compression-mode 1)
   (column-number-mode 1)
@@ -171,6 +171,9 @@ Set PATH for GUI emacs
   ;; scale text in smallerl steps
   ;; (setq text-scale-mode-step 1.1)
 
+  ;; smooth scroll (emacs 29)
+  ;; (setq pixel-scroll-precision-mode t)
+
   ;; set face size of minibuffer
   (add-hook 'minibuffer-setup-hook 'my-minibuffer-setup)
   (defun my-minibuffer-setup ()
@@ -231,7 +234,7 @@ Enable smooth scroll and scroll window under mouse
 (setq use-file-dialog nil)
 #+end_src
 
-** Extended Display Preferences 
+** Extended Display Preferences
 - Set default size of the window frame on load
 - Padding between buffer and line number
 #+begin_src emacs-lisp :tangle lisp/common.el
@@ -251,7 +254,7 @@ Improve appearance of title bar on osx GUI emacs, white on black
 ** Default Theme
 Install and configure =modus-themes=
 
-By default, use =modus-vivendi= theme, a dark theme by the talented Prot. Manual and configuration details can be found [[https://protesilaos.com/modus-themes][here]].
+By default, use =modus-vivendi= theme. Manual and configuration details can be found [[https://protesilaos.com/modus-themes][here]].
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package modus-themes
@@ -261,10 +264,12 @@ By default, use =modus-vivendi= theme, a dark theme by the talented Prot. Manual
           modus-themes-bold-constructs nil
           modus-themes-subtle-line-numbers t
           modus-themes-fringes 'subtle
-          modus-themes-completions 'opinionated
+          modus-themes-completions (quote ((matches . (background intense))
+                  (selection . (accented intense))
+                  (popup . (accented))))
           modus-themes-mode-line '(padding accented 3d)
           ; modus-themes-syntax '(green-strings yellow-comments faint alt-syntax)
-          modus-themes-region 'no-extend
+          ;; modus-themes-region (quote (bg-only no-extend))
           ;; modus-themes-vivendi-color-overrides
           ;;   '((bg-main . "#1d2021")
           ;;    (fg-main . "#c2c2c2"))
@@ -433,7 +438,7 @@ Install =buffer-move= for arranging buffers
 
 * Dired
 ** Configuration
-Setup =dired= the way I like it. 
+Setup =dired= the way I like it.
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (require 'dired-x) ;; enable extra features by default
   (setq insert-directory-program "gls" dired-use-ls-dired t)
@@ -462,7 +467,7 @@ Also auto refresh dired, but be quiet about it
     :ensure t
     :custom
       (dap-auto-configure-features '(sessions locals controls tooltip))
-    :config 
+    :config
     )
   #+end_src
 
@@ -501,7 +506,7 @@ Use "F" to open all marked files. Code lifted from [[https://stackoverflow.com/q
    (define-key global-map [remap find-file] #'helm-find-files)
    (define-key global-map [remap execute-extended-command] #'helm-M-x)
    (define-key global-map [remap switch-to-buffer] #'helm-mini)
-   (define-key global-map (kbd "C-.") #'lsp-find-definition)  
+   (define-key global-map (kbd "C-.") #'lsp-find-definition)
    (which-key-mode)
    ;; (add-hook 'prog-mode-hook #'lsp)
    (setq gc-cons-threshold (* 100 1024 1024)
@@ -537,7 +542,7 @@ TRAMP can be used for editing files remotely. =docker-tramp= allows for editing 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (use-package docker-tramp
     :ensure t)
- 
+
 #+end_src
 * Additional Hooks
 ** Prog Mode
@@ -748,10 +753,10 @@ Disable line numbers for the following modes -- TODO: I have disabled line numbe
                                 (lsp)))); or lsp-deferred
 
   (dap-register-debug-template "Configs"
-                               (list :type "python"                                           
+                               (list :type "python"
                                      :args (concat
                                             "run"
-                                            " -m" 
+                                            " -m"
                                             " --wait-for-client")
                                      :cwd "/Users/rhunter/git/cloud/configs"
                                      :environment-variables '(("PYTHONPATH" . "/Users/rhunter/.pyenv/versions/3.8.11/lib/python38.zip:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8/lib-dynload:/Users/rhunter/.virtualenvs/configs/lib/python3.8/site-packages:/Users/rhunter/git/cloud/configs/src"))
@@ -764,10 +769,10 @@ Disable line numbers for the following modes -- TODO: I have disabled line numbe
 
 
   (dap-register-debug-template "SC-AuthZ"
-                               (list :type "python"                                           
+                               (list :type "python"
                                      :args (concat
                                             "run"
-                                            " -m" 
+                                            " -m"
                                             " --wait-for-client")
                                      :cwd "/Users/rhunter/git/cloud/sc-authz"
                                      :environment-variables '(("INTERNAL_TOKEN_KEY" . "secret")
@@ -791,7 +796,7 @@ Disable line numbers for the following modes -- TODO: I have disabled line numbe
 #+end_src
 
 ** YAML
-#+begin_src emacs-lisp :tangle lisp/hooks.el 
+#+begin_src emacs-lisp :tangle lisp/hooks.el
   (use-package yaml-mode
     :ensure t
   )
@@ -856,10 +861,50 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
 #+end_src
 
 * Org Mode
+** Default Settings
+- Follow links
+- Associate all org files with org mode
+- Activate =org-indent-mode= nicer indents
+- Activate =visual-line-mode= for readability
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (setq org-return-follows-link t)
+  (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
+  (add-hook 'org-mode-hook 'org-indent-mode)
+  (add-hook 'org-mode-hook 'visual-line-mode)
+#+end_src
+
+** Visual Settings
+Set maximum indentation for description lists
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (setq org-list-description-max-indent 5)
+#+end_src
+
+Hide emphasis markup (e.g. /.../ for italics, *...* for bold, etc.)
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (setq org-hide-emphasis-markers t)
+#+end_src
+
+Visual fill mode, visual fill column mode settings
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  ;; set up display of org mode docs
+  (defun org-mode-visual-fill ()
+    (setq visual-fill-column-width 160
+          visual-fill-column-center-text t
+          visual-fill-column-mode 1))
+
+  ;; (unless (package-installed-p 'visual-fill-column)
+  ;;   (package-install 'visual-fill-column))
+
+  (use-package visual-fill-column
+    :ensure t
+    :defer t
+    :hook (org-mode-hook . org-mode-visual-fill))
+#+end_src
+
 ** Org-Capture
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (setq org-directory "~/org")
-  (setq org-default-notes-file "~/org/refile.org")                           
+  (setq org-default-notes-file "~/org/refile.org")
 
   (setq org-refile-targets (quote (("~/org/kraken.org" :maxlevel . 2)
                                    ("~/org/notes.org" :level . 1)
@@ -870,24 +915,95 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
 
     ;; Capture templates for: TODO tasks, Notes, appointments, phone calls, meetings, and org-protocol
     (setq org-capture-templates
-          (quote (("t" "todo" entry (file "~/org/refile.org")
-                   "* TODO %?\n%U\n%a\n" :clock-in t :clock-resume t)
-                  ("r" "respond" entry (file "~/org/refile.org")
-                   "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n%a\n" :clock-in t :clock-resume t :immediate-finish t)
-                  ("n" "note" entry (file "~/org/refile.org")
-                   "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
-                  ("w" "org-protocol" entry (file "~/org/refile.org")
-                   "* TODO Review %c\n%U\n" :immediate-finish t)
-                  ("m" "Meeting" entry (file "~/org/refile.org")
-                   "* MEETING with %? :MEETING:\n%U" :clock-in t :clock-resume t))))
+          (quote (("g" "General To-Do"
+                   entry (file+headline "~/org/todos.org" "General Tasks")
+                   "* TODO [#B] %?\n:Created: %T\n "
+                   :empty-lines 0)
+                  ("j" "Work Log Entry"
+                   entry (file+datetree "~/org/log.org")
+                   "* %?"
+                   :empty-lines 0)
+                  ("n" "Note"
+                   entry (file+headline "~/org/notes.org" "Notes")
+                   "** %?"
+                   :empty-lines 0)
+                  ("c" "Code To-Do"
+                   entry (file+headline "~/org/todos.org" "Code Related Tasks")
+                   "* TODO [#B] %?\n:Created: %T\n%i\n%a\nProposed Solution: "
+                   :empty-lines 0)
+                  ("m" "Meeting"
+                   entry (file+datetree "~/org/meetings.org")
+                   "* %? :meeting:%^g \n:Created: %T\n** Attendees\n*** \n** Notes\n** Action Items\n*** TODO [#A] "
+                   :tree-type week
+                   :clock-in t
+                   :clock-resume t
+                   :empty-lines 0))))
+#+end_src
 
+** Tags
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (setq org-tag-alist '(
+                        ;; Ticket types
+                        (:startgroup . nil)
+                        ("@bug" . ?b)
+                        ("@feature" . ?u)
+                        ("@spike" . ?j)
+                        (:endgroup . nil)
+
+                        ;; Ticket flags
+                        ("@write_ticket" . ?w)
+                        ("@emergency" . ?e)
+                        ("@research" . ?r)
+
+                        ;; Meeting types
+                        (:startgroup . nil)
+                        ("platform_sprint_review" . ?i)
+                        ("dsu" . ?d)
+                        ("refinement" . ?g)
+                        ("review_retro" . ?s)
+                        (:endgroup . nil)
+
+                        ;; Code TODOs tags
+                        ("testing" . ?q)
+                        ("backend" . ?k)
+                        ("UI" . ?f)
+
+                        ;; Special tags
+                        ("CRITICAL" . ?y)
+                        ("obstacle" . ?o)
+
+                        ;; Meeting tags
+                        ("HR" . ?h)
+                        ("UX" . ?x)
+                        ("general" . ?l)
+                        ("meeting" . ?m)
+                        ("misc" . ?z)
+                        ("planning" . ?p)
+
+                        ;; Work Log Tags
+                        ("accomplishment" . ?a)
+                        ))
+#+end_src
+
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+(setq org-tag-faces
+      '(
+        ("planning"  . (:foreground "mediumPurple1" :weight bold))
+        ("backend"   . (:foreground "royalblue1"    :weight bold))
+        ("UI"        . (:foreground "forest green"  :weight bold))
+        ("testing"   . (:foreground "sienna"        :weight bold))
+        ("meeting"   . (:foreground "yellow1"       :weight bold))
+        ("CRITICAL"  . (:foreground "red1"          :weight bold))
+        )
+      )
 #+end_src
 
 ** Agenda Setup
 #+begin_src emacs-lisp :tangle lisp/hooks.el
          (setq org-agenda-files (quote ("~/org/notes.org"
-                                        "~/org/kraken.org"
-                                        "~/org/refile.org")))
+                                        "~/org/todos.org"
+                                        "~/org/log.org"
+                                        "~/org/meetings.org")))
          (setq org-agenda-sticky t)
          (setq org-agenda-inhibit-startup nil)
 
@@ -944,48 +1060,26 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
 #+end_src
 
 ** Todo states
-#+begin_src emacs-lisp :tangle lisp/hooks.el 
+#+begin_src emacs-lisp :tangle lisp/hooks.el
 
   (setq org-todo-keywords
-        '((sequence "TODO(t)" "IN PROGRESS(p)" "|" "DONE(d)")
+        '((sequence "TODO(t)" "PLANNING(p)" "IN PROGRESS(i@/!)"  "VERIFYING(v!)" "BLOCKED(b@)" "|" "DONE(d!)" "OBE(o@!)" "WONT-DO(w@/!)")
           (sequence "TASK(f)"  "|" "DONE(d)")
-          (sequence "GOAL(g)" "|" "DELIVERED(y)")))
+          (sequence "GOAL(g)" "|" "DELIVERED(y!)")))
 
   (setq org-todo-keyword-faces
         '(("TODO" . (:foreground "DarkOrange1" :weight bold))
           ("IN PROGRESS" . (:foreground "sea green"))
+          ("PLANNING" . (:foreground "DeepPink" :weight bold))
+          ("VERIFYING" . (:foreground "DarkOrange" :weight bold))
+          ("BLOCKED" . (:foreground "Red" :weight bold))
           ("DONE" . (:foreground "light sea green"))
           ("TASK" . (:foreground "magenta"))))
 #+end_src
 
 ** Visual settings
 
-Set maximum indentation for description lists
-#+begin_src emacs-lisp :tangle lisp/hooks.el
-  (setq org-list-description-max-indent 5)
-#+end_src
 
-Hude emphasis markup (e.g. /.../ for italics, *...* for bold, etc.)
-#+begin_src emacs-lisp :tangle lisp/hooks.el
-  (setq org-hide-emphasis-markers t)
-#+end_src
-
-Visual fill mode, visual fill column mode settings
-#+begin_src emacs-lisp :tangle lisp/hooks.el
-  ;; set up display of org mode docs
-  (defun org-mode-visual-fill ()
-    (setq visual-fill-column-width 160
-          visual-fill-column-center-text t
-          visual-fill-column-mode 1))
-
-  ;; (unless (package-installed-p 'visual-fill-column)
-  ;;   (package-install 'visual-fill-column))
-
-  (use-package visual-fill-column
-    :ensure t
-    :defer t
-    :hook (org-mode-hook . org-mode-visual-fill))
-#+end_src
 
 Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beautifying-org-mode-in-emacs/]]
 #+begin_src emacs-lisp :tangle lisp/hooks.el
@@ -1021,8 +1115,6 @@ Define Setup
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (defun org-mode-setup ()
     (org-bullets-mode)
-    (org-indent-mode)
-    (visual-line-mode 1)
     )
 #+end_src
 
@@ -1064,7 +1156,7 @@ Define Setup
      (python . t)
      (shell . t)
      (js . t)
-     (plantuml . t) 
+     (plantuml . t)
      ))
 #+end_src
 
