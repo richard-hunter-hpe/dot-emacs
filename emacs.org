@@ -871,6 +871,7 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
   (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
   (add-hook 'org-mode-hook 'org-indent-mode)
   (add-hook 'org-mode-hook 'visual-line-mode)
+  (setq org-ellipsis " ▼")
 #+end_src
 
 ** Visual Settings
@@ -1023,42 +1024,6 @@ Visual fill mode, visual fill column mode settings
             ))))
 #+end_src
 
-** Special
-#+begin_src emacs-lisp :tangle lisp/hooks.el
-  (defvar org-sec-with "nobody"
-    "Value of the :with: property when doing an
-     org-sec-tag-entry. Change it with org-sec-set-with,
-     set to C-c w")
-
-  (defvar org-sec-where ""
-    "Value of the :at: property when doing an
-     org-sec-tag-entry. Change it with org-sec-set-with,
-     set to C-c W")
-
-  (defvar org-sec-with-history '()
-    "History list of :with: properties")
-
-  (defvar org-sec-where-history '()
-    "History list of :where: properties")
-
-  (defun org-sec-set-with ()
-    "Changes the value of the org-sec-with variable for use
-     in the next call of org-sec-tag-entry."
-    (interactive)
-    (setq org-sec-with (read-string "With: " nil
-                                    'org-sec-with-history "")))
-  (global-set-key "\C-cw" 'org-sec-set-with)
-
-  (defun org-sec-set-where ()
-    "Changes the value of the org-sec-where variable for use
-     in the next call of org-sec-tag-entry."
-    (interactive)
-    (setq org-sec-where
-          (read-string "Where: " nil
-                       'org-sec-where-history "")))
-  (global-set-key "\C-cW" 'org-sec-set-where)
-#+end_src
-
 ** Todo states
 #+begin_src emacs-lisp :tangle lisp/hooks.el
 
@@ -1078,8 +1043,6 @@ Visual fill mode, visual fill column mode settings
 #+end_src
 
 ** Visual settings
-
-
 
 Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beautifying-org-mode-in-emacs/]]
 #+begin_src emacs-lisp :tangle lisp/hooks.el
@@ -1111,20 +1074,11 @@ Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beaut
    #+end_src
 
 
-Define Setup
-#+begin_src emacs-lisp :tangle lisp/hooks.el
-  (defun org-mode-setup ()
-    (org-bullets-mode)
-    )
-#+end_src
-
-
 ** Bootstrap Org
     #+begin_src emacs-lisp :tangle lisp/hooks.el
     (use-package org
-      :hook ((org-mode-hook . org-mode-setup))
       :config
-      (setq org-ellipsis " ▼"))
+      )
     #+end_src
 
 ** Org Bullets
