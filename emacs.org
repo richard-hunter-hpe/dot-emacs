@@ -938,7 +938,14 @@ Visual fill mode, visual fill column mode settings
                    :tree-type week
                    :clock-in t
                    :clock-resume t
-                   :empty-lines 0))))
+                   :empty-lines 0)
+                  ("t" "Ticket"
+                   entry (file+headline "~/org/tickets.org" "Tickets")
+                   "* TODO [#B] %? %^g\nCreated: %T\n** Jira Link: \n** Notes\n** Status\n - [ ] Research\n - [ ] PR\n - [ ] Verifying\n** Subtasks"
+                   :empty-lines 0)
+                  ("p" "Sprint"
+                   entry (file "~/org/sprints.org" )
+                   "** TASK Sprint %?\n:Created: %T\nSCHEDULED: %T\nDEADLINE: %T\n*** GOAL\n*** Notes "))))
 #+end_src
 
 ** Tags
@@ -947,7 +954,7 @@ Visual fill mode, visual fill column mode settings
                         ;; Ticket types
                         (:startgroup . nil)
                         ("@bug" . ?b)
-                        ("@feature" . ?u)
+                        ("@story" . ?u)
                         ("@spike" . ?j)
                         (:endgroup . nil)
 
@@ -1004,6 +1011,8 @@ Visual fill mode, visual fill column mode settings
          (setq org-agenda-files (quote ("~/org/notes.org"
                                         "~/org/todos.org"
                                         "~/org/log.org"
+                                        "~/org/sprints.org"
+                                        "~/org/tickets.org"
                                         "~/org/meetings.org")))
          (setq org-agenda-sticky t)
          (setq org-agenda-inhibit-startup nil)
