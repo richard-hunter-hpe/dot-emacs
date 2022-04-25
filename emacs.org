@@ -1076,9 +1076,9 @@ Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beaut
 
 ** Bootstrap Org
     #+begin_src emacs-lisp :tangle lisp/hooks.el
-    (use-package org
-      :config
-      )
+      (use-package org
+        :hook ((org-mode-hook . org-bullets-mode))
+        )
     #+end_src
 
 ** Org Bullets
