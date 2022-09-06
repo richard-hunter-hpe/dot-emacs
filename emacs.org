@@ -7,7 +7,6 @@
 
 * Startup Config
 ** Basic Internals
-
 - Turn off mouse interface early in startup to avoid momentary display
 - hide certain elements if in GUI emacs including scroll bar, tool bar
 - set default window sizes for GUI emacs
@@ -23,15 +22,19 @@
                 (tool-bar-lines . 0)
                 (width . 200) ; chars
                 (height . 80) ; lines
-                (left . 300)
+                (left . 30)
+                (vertical-scroll-bars . nil)
+                (horizontal-scroll-bars . nil)
                 (top . 20)))
         (setq default-frame-alist
               '(
-                (tool-bar-lines . 0)
                 (width . 200)
                 (height . 80)
-                (left . 300)
-                (top . 20))))
+                (left . 60)
+                (top . 20)
+                (vertical-scroll-bars . nil)
+                (horizontal-scroll-bars . nil)
+                (tool-bar-lines . 0))))
     (progn
       (setq initial-frame-alist '( (tool-bar-lines . 0)))
       (setq default-frame-alist '( (tool-bar-lines . 0)))))
@@ -39,8 +42,9 @@
 
 Require some internal libs
 #+begin_src emacs-lisp :tangle lisp/common.el
-     (require 'linum)
-     (require 'paren)
+  (require 'linum)
+  (require 'paren)
+
 #+end_src
 
 Activate some internal features
@@ -60,6 +64,7 @@ Activate some internal features
   (global-auto-revert-mode 1)
   (global-font-lock-mode 1)
   (global-hl-line-mode 1)
+  ;; Lately I've come to dislike line numbers unless pair programming, so leave off
   ;; (global-display-line-numbers-mode 1)
   (show-paren-mode 1)
   (transient-mark-mode 1)
@@ -89,8 +94,7 @@ Location and settings for temp files
       version-control t
       delete-old-versions t
       kept-new-versions 20
-      kept-old-versions 5
-)
+      kept-old-versions 5)
 #+end_src
 
 Startup message and scratch buffer setup
@@ -109,9 +113,9 @@ Uniquify the buffer's name
 
 Reset some standard keybindings
 #+begin_src emacs-lisp :tangle lisp/common.el
-  ;; In GUI emacs, C-z minimizes window, which is useless.
-  ;; (global-unset-key (kbd "C-z"))
-  ;; UNDOING THIS FOR NOW, SINCE IT SWALLOWS c-Z in apple terminal
+    ;; In GUI emacs, C-z minimizes window, which is useless.
+    (if (display-graphic-p)
+        (global-unset-key (kbd "C-z")))
 #+end_src
 
 Auto refresh buffers
@@ -171,14 +175,11 @@ Set PATH for GUI emacs
   ;; scale text in smallerl steps
   ;; (setq text-scale-mode-step 1.1)
 
-  ;; smooth scroll (emacs 29)
-  ;; (setq pixel-scroll-precision-mode t)
-
   ;; set face size of minibuffer
   (add-hook 'minibuffer-setup-hook 'my-minibuffer-setup)
   (defun my-minibuffer-setup ()
-         (set (make-local-variable 'face-remapping-alist)
-            '((default :height 1.3))))
+    (set (make-local-variable 'face-remapping-alist)
+         '((default :height 1.3))))
 #+end_src
 * Package System Setup
 ** Setup the package manager
@@ -227,11 +228,50 @@ Set PATH for GUI emacs
 Enable smooth scroll and scroll window under mouse
 
 #+begin_src emacs-lisp :tangle lisp/common.el
-(setq hscroll-step 1)
-(setq scroll-conservatively 1000)
-(setq mouse-wheel-follow-mouse 't)
-(setq use-dialog-box t)               ; only for mouse events
-(setq use-file-dialog nil)
+  (setq hscroll-step 1)
+  (setq scroll-conservatively 1000)
+  (setq mouse-wheel-follow-mouse 't)
+  (setq use-dialog-box t)               ; only for mouse events
+  (setq use-file-dialog nil)
+
+  ;; smooth scroll (requires emacs 29)
+  ;; still cant tell if it makes me dizzy...
+  (setq pixel-scroll-precision-mode t)
+#+end_src
+
+** Cursory
+Lightweight package for easily creating cursor presets
+#+begin_src emacs-lisp :tangle lisp/packages.el
+   (use-package cursory
+     :ensure t)
+   (require 'cursory)
+   (setq cursory-presets
+          '((bar
+             :cursor-type (bar . 2)
+             :cursor-in-non-selected-windows hollow
+             :blink-cursor-blinks 10
+             :blink-cursor-interval 0.5
+             :blink-cursor-delay 0.2)
+            (box
+             :cursor-type box
+             :cursor-in-non-selected-windows hollow
+             :blink-cursor-blinks 10
+             :blink-cursor-interval 0.5
+             :blink-cursor-delay 0.2)
+            (underscore
+             :cursor-type (hbar . 3)
+             :cursor-in-non-selected-windows hollow
+             :blink-cursor-blinks 50
+             :blink-cursor-interval 0.2
+             :blink-cursor-delay 0.2)))
+  (setq cursory-latest-state-file (locate-user-emacs-file "cursory-latest-state"))
+  ;; Set last preset or fall back to desired style from `cursory-presets'.
+  (cursory-set-preset (or (cursory-restore-latest-preset) 'bar))
+  ;; The other side of `cursory-restore-latest-preset'.
+  (add-hook 'kill-emacs-hook #'cursory-store-latest-preset)
+  ;; We have to use the "point" mnemonic, because C-c c is often the
+  ;; suggested binding for `org-capture'.
+  (define-key global-map (kbd "C-c p") #'cursory-set-preset)
 #+end_src
 
 ** Extended Display Preferences
@@ -252,9 +292,11 @@ Improve appearance of title bar on osx GUI emacs, white on black
 #+end_src
 
 ** Default Theme
-Install and configure =modus-themes=
+Install and configure themes
 
-By default, use =modus-vivendi= theme. Manual and configuration details can be found [[https://protesilaos.com/modus-themes][here]].
+Configure =modus-vivendi= theme. This theme is a highly polished and well-maintained theme with high legibility.
+Manual and configuration details can be found [[https://protesilaos.com/modus-themes][here]].
+(Note, for now not using it as a default theme, but at any point =F6= can be used to toggle the theme on.)
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package modus-themes
@@ -268,7 +310,7 @@ By default, use =modus-vivendi= theme. Manual and configuration details can be f
                   (selection . (accented intense))
                   (popup . (accented))))
           modus-themes-mode-line '(padding accented 3d)
-          ; modus-themes-syntax '(green-strings yellow-comments faint alt-syntax)
+          ;; modus-themes-syntax '(green-strings yellow-comments faint alt-syntax)
           ;; modus-themes-region (quote (bg-only no-extend))
           ;; modus-themes-vivendi-color-overrides
           ;;   '((bg-main . "#1d2021")
@@ -280,15 +322,45 @@ By default, use =modus-vivendi= theme. Manual and configuration details can be f
           )
     ;; Load the theme files before enabling a theme (else you get an error).
     (modus-themes-load-themes)
-    :config
-    (modus-themes-load-vivendi)
+    ;; uncomment below to load modus themes as default
+    ;; :config
+    ;; (modus-themes-load-vivendi)
+    ;; =f6= for toggling between light and dark modes
     :bind ("<f6>" . modus-themes-toggle))
-
 #+end_src
 
+I like =doom-themes= also...
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package doom-themes
+    :ensure t
+    ;; currently enjoying doom-xcode theme
+    :config (load-theme 'doom-xcode t)
+  )
+#+end_src
+
+** Tab Bar
+Don't show the buttons on tabs
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (setq tab-bar-close-button-show nil)
+  (setq tab-bar-new-button-show nil)
+#+end_src
+
+Customize Tab Bar face
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (set-face-attribute 'tab-bar-tab nil :overline "dark cyan" :box nil)
+#+end_src
+
+
 ** Modeline
-- TODO: customize modeline
+- TODO: customize modeline, see below (however, liking =doom-modline=)
 - [[https://occasionallycogent.com/custom_emacs_modeline/index.html][Customizing Modeline]]
+  
+  =doom-modeline= is a very sensible default modeline, so sticking with it for a while
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package doom-modeline
+  :ensure t
+  :config (doom-modeline-mode))
+#+end_src
 
 * Custom Utility Functions
 Here we add custom utility functions
@@ -376,7 +448,7 @@ Here we add custom utility functions
   ;; [Ctrl+c -> a -- Org open agenda]
   (define-key global-map "\C-cl" 'org-store-link)
   (define-key global-map "\C-ca" 'org-agenda)
-  (global-set-key "\C-cc" 'org-capture)
+    (global-set-key "\C-cc" 'org-capture)
   (global-set-key "\C-cb" 'org-switchb)
   (setq org-log-done t)
 
@@ -397,36 +469,55 @@ Here we add custom utility functions
       (setq kill-ring (reverse kr))))
 
   (global-set-key (kbd "C-M-<backspace>") 'backward-kill-word-noring)
+
+  ;; Special keys
+  (customize-set-variable mac-right-option-modifier nil)
+  (customize-set-variable mac-command-modifier 'super)
+  (customize-set-variable ns-function-modifier 'hyper)
+
+  ;; Keybinds
+
+  (global-set-key (kbd "s-W") 'delete-frame) ; ⌘-W = Close window
+  (global-set-key (kbd "s-}") 'tab-bar-switch-to-next-tab) ; ⌘-} = Next tab
+  (global-set-key (kbd "s-{") 'tab-bar-switch-to-prev-tab) ; ⌘-{ = Previous tab
+  (global-set-key (kbd "s-t") 'tab-bar-new-tab) ;⌘-t = New tab
+  (global-set-key (kbd "s-w") 'tab-bar-close-tab) ; ⌘-w = Close tab
+
+  (unless (< emacs-major-version 28)
+    (global-set-key (kbd "s-Z") 'undo-redo)) ; ⌘-Z = Redo
 #+end_src
+
 * Completions
 ** Orderless
 Install and configure =orderless= a completetions framework helper. I use it in tandem with the built-in =icomplete=.
-- Note: I've disabled this for now as it can conflict with helm
 #+begin_src emacs-lisp :tangle lisp/packages.el
-(use-package orderless
-  :ensure t
-  :init (icomplete-mode) ; optional but recommended!
-  :custom (completion-styles '(orderless)))
-#+end_src
+  (use-package orderless
+    :ensure t
+    :init (icomplete-mode) ; optional but recommended!
+    :custom (completion-styles '(orderless)))
+
+    ;; (require 'tree-sitter)
+    ;; (require 'tree-sitter-langs)
+    #+end_src
+
 ** Helm
-Helm config
 #+begin_src emacs-lisp :tangle lisp/packages.el
-;  (use-package helm
-;    :ensure t
-;    :init
-;    (setq helm-split-window-in-side-p           t ; open helm buffer inside current window, not occupy whole other window
-;          helm-move-to-line-cycle-in-source     t ; move to end or beginning of source when reaching top or bottom of source.
-;          helm-ff-search-library-in-sexp        t ; search for library in `require' and `declare-function' sexp.
-;          helm-scroll-amount                    8 ; scroll 8 lines other window using M-<next>/M-<prior>
-;          helm-ff-file-name-history-use-recentf t
-;          helm-echo-input-in-header-line t)
-;    (setq helm-autoresize-max-height 0)
-;    (setq helm-autoresize-min-height 40)
-;    (helm-autoresize-mode 1)
-;    :config
-;    (define-key global-map [remap find-file] #'helm-find-files)
-;    (define-key global-map [remap execute-extended-command] #'helm-M-x)
-;    (define-key global-map [remap switch-to-buffer] #'helm-mini))
+;;  (use-package helm
+ ;;    :ensure t
+  ;;   :init
+  ;;   (setq helm-split-window-in-side-p           t ; open helm buffer inside current window, not occupy whole other window
+  ;;         helm-move-to-line-cycle-in-source     t ; move to end or beginning of source when reaching top or bottom of source.
+  ;;         helm-ff-search-library-in-sexp        t ; search for library in `require' and `declare-function' sexp.
+  ;;         helm-scroll-amount                    8 ; scroll 8 lines other window using M-<next>/M-<prior>
+  ;;         helm-ff-file-name-history-use-recentf t
+  ;;         helm-echo-input-in-header-line t)
+  ;;   (setq helm-autoresize-max-height 0)
+  ;;   (setq helm-autoresize-min-height 40)
+  ;;   (setq helm-autoresize-mode 1)
+  ;;   :config
+  ;;   (define-key global-map [remap find-file] #'helm-find-files)
+  ;;   (define-key global-map [remap execute-extended-command] #'helm-M-x)
+  ;;   (define-key global-map [remap switch-to-buffer] #'helm-mini))
 #+end_src
 
 * Buffer Move
@@ -435,6 +526,13 @@ Install =buffer-move= for arranging buffers
 (unless (package-installed-p 'buffer-move)
   (package-install 'buffer-move))
 #+end_src
+
+* vTerm
+#+begin_src emacs-lisp :tangle lisp/packages.el
+    (use-package vterm
+        :ensure t
+        :hook (after-init . vterm-mode))
+  #+end_src
 
 * Dired
 ** Configuration
@@ -466,13 +564,13 @@ Also auto refresh dired, but be quiet about it
   (use-package dap-mode
     :ensure t
     :custom
-      (dap-auto-configure-features '(sessions locals controls tooltip))
+      (dap-auto-configure-features '(sessions locals expressions controls tooltip))
     :config
     )
   #+end_src
 
 * Custom Functions
-Use "F" to open all marked files. Code lifted from [[https://stackoverflow.com/questions/1110118/in-emacs-dired-how-to-find-visit-multiple-files][here]].
+Use "F" to open all marked files in =dired=. Code lifted from [[https://stackoverflow.com/questions/1110118/in-emacs-dired-how-to-find-visit-multiple-files][here]].
 #+begin_src emacs-lisp :tangle lisp/hooks.el
 (eval-after-load "dired"
   '(progn
@@ -486,11 +584,13 @@ Use "F" to open all marked files. Code lifted from [[https://stackoverflow.com/q
 * LSP & Company
 ** LSP
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-   (setq package-selected-packages '(lsp-mode yasnippet lsp-ui lsp-treemacs helm-lsp projectile hydra flycheck company avy which-key helm-xref json-mode))
+;;   (setq package-selected-packages '(lsp-mode yasnippet lsp-ui lsp-treemacs helm-lsp projectile hydra flycheck company avy which-key helm-xref json-mode))
+   (setq package-selected-packages '(lsp-mode yasnippet lsp-ui lsp-treemacs projectile hydra flycheck company avy which-key helm-xref json-mode))
    (when (cl-find-if-not #'package-installed-p package-selected-packages)
      (package-refresh-contents)
      (mapc #'package-install package-selected-packages))
 
+   (setq helm-buffer-details-flag nil)
    (helm-mode)
    (require 'helm-xref)
 
@@ -543,6 +643,7 @@ TRAMP can be used for editing files remotely. =docker-tramp= allows for editing 
   (use-package docker-tramp
     :ensure t)
 
+  (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
 #+end_src
 * Additional Hooks
 ** Prog Mode
@@ -606,18 +707,23 @@ I prefer Ibuffer to buffer window. Pretty colors and such. The keybinding =C-b= 
 #+end_src
 
 ** Line numbers
-Disable line numbers for the following modes -- TODO: I have disabled line numbers by default. So it may be better to 'opt in' for line numbers on specific modes (prog-mode)
+Disable line numbers for the following modes regardless of global setting
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (dolist (mode '(org-mode-hook
-                  org-agenda-mode-hook
-                  treemacs-mode-hook
-                  term-mode-hook
-                  eshell-mode-hook
-                  shell-mode-hook
-                  image-mode-hook
-                  helm-mode-hook
-                  markdown-mode-hook))
-    (add-hook mode (lambda() (display-line-numbers-mode -1))))
+ (dolist (mode '(org-mode-hook
+                 org-agenda-mode-hook
+                 treemacs-mode-hook
+                 term-mode-hook
+                 eshell-mode-hook
+                 shell-mode-hook
+                 image-mode-hook
+                 helm-mode-hook
+                 markdown-mode-hook))
+   (add-hook mode (lambda() (display-line-numbers-mode -1))))
+#+end_src
+
+Opt in line numbers on these modes regardless of global setting
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (dolist (mode '(dockerfile-mode-hook))(add-hook mode (lambda() (display-line-numbers-mode 1))))
 #+end_src
 
 ** SmartParens
@@ -638,12 +744,16 @@ Disable line numbers for the following modes -- TODO: I have disabled line numbe
   ;; turn on lsp mode
   (add-hook 'js-mode-hook #'lsp)
 
+  ;; dont use tree sitter as it slows down org mode syntax highlighting in code blocks :(
+  ;; (add-hook 'js-mode-hook #'tree-sitter-hl-mode)
+
+
   (defun setup-js-mode ()
     "Setup function for JavaScript"
     (interactive)
-    ;; (flycheck-mode +1)
-    ;; (setq flycheck-check-syntax-automatically '(save mode-enabled))
-    ;; (eldoc-mode +1)
+    (flycheck-mode +1)
+    (setq flycheck-check-syntax-automatically '(save mode-enabled))
+    (eldoc-mode +1)
     (define-key global-map [remap js-find-symbol] #'lsp-ui-peek-find-definitions)
     (define-key global-map [remap xref-find-references] #'lsp-ui-peek-find-references)
     (require 'dap-node)
@@ -725,63 +835,89 @@ Disable line numbers for the following modes -- TODO: I have disabled line numbe
 #+end_src
 ** Python
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (use-package python ;; mode is python-mode but package is called python
-    :hook (python-mode-hook . lsp-deferred)
-    :custom
-    ;; NOTE: Set these if Python 3 is called "python3" on your system!
-    ;; (python-shell-interpreter "python3")
-    ;; (dap-python-executable "python3")
-    (dap-python-debugger 'debugpy)
-    :config
-    (require 'dap-python))
-
-  ;; (add-hook 'python-mode-hook . '(add-hook 'after-save-hook 'whitespace-cleanup))
-
-  (use-package pyvenv
+  ;; poetry
+  (use-package poetry
     :ensure t
-    :commands pyenv-activate
-    :config
-    (setq pyvenv-mode-line-indicator
-        '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] ")))
-    (pyvenv-mode 1))
-
-  (use-package lsp-pyright
-    :ensure t
-    :init (setq lsp-python-ms-auto-install-server t)
-    :hook (python-mode-hook . (lambda ()
-                                (require 'lsp-pyright)
-                                (lsp)))); or lsp-deferred
-
-  (dap-register-debug-template "Configs"
-                               (list :type "python"
-                                     :args (concat
-                                            "run"
-                                            " -m"
-                                            " --wait-for-client")
-                                     :cwd "/Users/rhunter/git/cloud/configs"
-                                     :environment-variables '(("PYTHONPATH" . "/Users/rhunter/.pyenv/versions/3.8.11/lib/python38.zip:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8/lib-dynload:/Users/rhunter/.virtualenvs/configs/lib/python3.8/site-packages:/Users/rhunter/git/cloud/configs/src"))
-                                          ;:environment-variables '(("PYTHONPATH" . "/Users/rhunter/git/cloud/configs/src"))
-                                     :target-module (expand-file-name "git/cloud/configs/src/configs/main.py")
-                                     :request "launch"
-                                     :host "0.0.0.0"
-                                     :hostName "0.0.0.0"
-                                     :name "Configs"))
+    :hook
+    ;; activate poetry-tracking-mode when python-mode is active
+    (python-mode-hook . (lambda () (when (poetry-venv-exist-p)
+                              (setq-local lsp-pyls-server-command '("poetry" "run" "pyls"))
+                              (poetry-venv-workon))))
+  )
 
 
-  (dap-register-debug-template "SC-AuthZ"
-                               (list :type "python"
-                                     :args (concat
-                                            "run"
-                                            " -m"
-                                            " --wait-for-client")
-                                     :cwd "/Users/rhunter/git/cloud/sc-authz"
-                                     :environment-variables '(("INTERNAL_TOKEN_KEY" . "secret")
-                                            ("PYTHONPATH" . "/Users/rhunter/.pyenv/versions/3.8.11/lib/python38.zip:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8/lib-dynload:/Users/rhunter/.virtualenvs/authz/lib/python3.8/site-packages:/Users/rhunter/git/cloud/sc-authz/src"))
-                                     :target-module (expand-file-name "git/cloud/sc-authz/src/hpe_sc_authz/main.py")
-                                     :request "launch"
-                                     :host "0.0.0.0"
-                                     :hostName "0.0.0.0"
-                                     :name "SC-AuthZ"))
+    (use-package python ;; mode is python-mode but package is called python
+      :hook (python-mode-hook . lsp-deferred)
+      :custom
+      ;; NOTE: Set these if Python 3 is called "python3" on your system!
+      ;; (python-shell-interpreter "python3")
+      ;; (dap-python-executable "python3")
+      (dap-python-debugger 'debugpy)
+      :config
+      (require 'dap-python))
+
+    ;; (add-hook 'python-mode-hook . '(add-hook 'after-save-hook 'whitespace-cleanup))
+
+    (use-package pyvenv
+      :ensure t
+      :commands pyenv-activate
+      :config
+      (setq pyvenv-mode-line-indicator
+          '(pyvenv-virtual-env-name ("[venv:" pyvenv-virtual-env-name "] ")))
+      (pyvenv-mode 1))
+
+
+    ;; (lsp-register-client
+    ;;     (make-lsp-client :new-connection (lsp-tramp-connection "pyright")
+    ;;                      :major-modes '(python-mode)
+    ;;                      :remote? t
+    ;;                      :server-id 'pyright-remote))
+
+    (lsp-register-client
+        (make-lsp-client :new-connection (lsp-tramp-connection "pyls")
+                         :major-modes '(python-mode)
+                         :remote? t
+                         :server-id 'pyls-remote))
+
+
+  ;  (use-package lsp-pyright
+   ;   :ensure t
+    ;  :init (setq lsp-python-ms-auto-install-server t)
+     ; :hook (python-mode-hook . (lambda ()
+      ;                            (require 'lsp-pyright)
+       ;                           (lsp)))); or lsp-deferred
+
+
+    (dap-register-debug-template "Configs"
+                                 (list :type "python"
+                                       :args (concat
+                                              "run"
+                                              " -m"
+                                              " --wait-for-client")
+                                       :cwd "/Users/rhunter/git/cloud/configs"
+                                       :environment-variables '(("PYTHONPATH" . "/Users/rhunter/.pyenv/versions/3.8.11/lib/python38.zip:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8/lib-dynload:/Users/rhunter/.virtualenvs/configs/lib/python3.8/site-packages:/Users/rhunter/git/cloud/configs/src"))
+                                            ;:environment-variables '(("PYTHONPATH" . "/Users/rhunter/git/cloud/configs/src"))
+                                       :target-module (expand-file-name "git/cloud/configs/src/configs/main.py")
+                                       :request "launch"
+                                       :host "0.0.0.0"
+                                       :hostName "0.0.0.0"
+                                       :name "Configs"))
+
+
+    (dap-register-debug-template "SC-AuthZ"
+                                 (list :type "python"
+                                       :args (concat
+                                              "run"
+                                              " -m"
+                                              " --wait-for-client")
+                                       :cwd "/Users/rhunter/git/cloud/sc-authz"
+                                       :environment-variables '(("INTERNAL_TOKEN_KEY" . "secret")
+                                              ("PYTHONPATH" . "/Users/rhunter/.pyenv/versions/3.8.11/lib/python38.zip:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8:/Users/rhunter/.pyenv/versions/3.8.11/lib/python3.8/lib-dynload:/Users/rhunter/.virtualenvs/authz/lib/python3.8/site-packages:/Users/rhunter/git/cloud/sc-authz/src"))
+                                       :target-module (expand-file-name "git/cloud/sc-authz/src/hpe_sc_authz/main.py")
+                                       :request "launch"
+                                       :host "0.0.0.0"
+                                       :hostName "0.0.0.0"
+                                       :name "SC-AuthZ"))
 #+end_src
 
 ** Flycheck
@@ -907,7 +1043,7 @@ Visual fill mode, visual fill column mode settings
   (setq org-directory "~/org")
   (setq org-default-notes-file "~/org/refile.org")
 
-  (setq org-refile-targets (quote (("~/org/kraken.org" :maxlevel . 2)
+  (setq org-refile-targets (quote (("~/org/log.org" :maxlevel . 2)
                                    ("~/org/notes.org" :level . 1)
                                    ("~/org/refile.org" :level . 1))))
 
@@ -934,7 +1070,7 @@ Visual fill mode, visual fill column mode settings
                    :empty-lines 0)
                   ("m" "Meeting"
                    entry (file+datetree "~/org/meetings.org")
-                   "* %? :meeting:%^g \n:Created: %T\n** Attendees\n*** \n** Notes\n** Action Items\n*** TODO [#A] "
+                   "* %? :meeting:%^g \n:Created: %T\n** Attendees\n*** \n** Notes\n** Action Items"
                    :tree-type week
                    :clock-in t
                    :clock-resume t
@@ -945,7 +1081,7 @@ Visual fill mode, visual fill column mode settings
                    :empty-lines 0)
                   ("p" "Sprint"
                    entry (file "~/org/sprints.org" )
-                   "** TASK Sprint %?\n:Created: %T\nSCHEDULED: %T\nDEADLINE: %T\n*** GOAL\n*** Notes "))))
+                   "** Kraken Sprint %?\n:Created: %T\nSCHEDULED: %T\nDEADLINE: %T\n*** GOAL\n*** Notes\n*** Review\n*** Planning\n*** Retrospective "))))
 #+end_src
 
 ** Tags
@@ -965,28 +1101,27 @@ Visual fill mode, visual fill column mode settings
 
                         ;; Meeting types
                         (:startgroup . nil)
-                        ("platform_sprint_review" . ?i)
                         ("dsu" . ?d)
                         ("refinement" . ?g)
-                        ("review_retro" . ?s)
+                        ("review" . ?s)
+                        ("planning" . ?p)
                         (:endgroup . nil)
 
                         ;; Code TODOs tags
                         ("testing" . ?q)
                         ("backend" . ?k)
-                        ("UI" . ?f)
+                        ("ui" . ?f)
 
                         ;; Special tags
                         ("CRITICAL" . ?y)
                         ("obstacle" . ?o)
 
                         ;; Meeting tags
-                        ("HR" . ?h)
-                        ("UX" . ?x)
-                        ("general" . ?l)
+                        ("HPE" . ?h)
+                        ("SBU" . ?z)
+                        ("ux" . ?x)
+                        ("CDS" . ?l)
                         ("meeting" . ?m)
-                        ("misc" . ?z)
-                        ("planning" . ?p)
 
                         ;; Work Log Tags
                         ("accomplishment" . ?a)
@@ -998,7 +1133,7 @@ Visual fill mode, visual fill column mode settings
       '(
         ("planning"  . (:foreground "mediumPurple1" :weight bold))
         ("backend"   . (:foreground "royalblue1"    :weight bold))
-        ("UI"        . (:foreground "forest green"  :weight bold))
+        ("ui"        . (:foreground "forest green"  :weight bold))
         ("testing"   . (:foreground "sienna"        :weight bold))
         ("meeting"   . (:foreground "yellow1"       :weight bold))
         ("CRITICAL"  . (:foreground "red1"          :weight bold))
@@ -1026,6 +1161,8 @@ Visual fill mode, visual fill column mode settings
            ((agenda "" ((org-agenda-span 7)))
             (todo "GOAL"
                   ((org-agenda-overriding-header "Sprint Goals")))
+            (todo "KAIZEN"
+                  ((org-agenda-overriding-header "Kaizen")))
             (todo "TODO|IN PROGRESS"
                   ((org-agenda-overriding-header "My Todos")))
             (todo "TASK"
@@ -1037,15 +1174,15 @@ Visual fill mode, visual fill column mode settings
 #+begin_src emacs-lisp :tangle lisp/hooks.el
 
   (setq org-todo-keywords
-        '((sequence "TODO(t)" "PLANNING(p)" "IN PROGRESS(i@/!)"  "VERIFYING(v!)" "BLOCKED(b@)" "|" "DONE(d!)" "OBE(o@!)" "WONT-DO(w@/!)")
+        '((sequence "TODO(t)" "PLANNING(p)" "IN PROGRESS(i@/!)" "BLOCKED(b@)" "|" "DONE(d!)" "WONT-DO(w@/!)")
           (sequence "TASK(f)"  "|" "DONE(d)")
+          (sequence "KAIZEN(k)"  "|" "DONE(d)")
           (sequence "GOAL(g)" "|" "DELIVERED(y!)")))
 
   (setq org-todo-keyword-faces
         '(("TODO" . (:foreground "DarkOrange1" :weight bold))
           ("IN PROGRESS" . (:foreground "sea green"))
           ("PLANNING" . (:foreground "DeepPink" :weight bold))
-          ("VERIFYING" . (:foreground "DarkOrange" :weight bold))
           ("BLOCKED" . (:foreground "Red" :weight bold))
           ("DONE" . (:foreground "light sea green"))
           ("TASK" . (:foreground "magenta"))))
@@ -1136,8 +1273,8 @@ Pull =magit= and launch it with ~C-x g~
     :ensure t
   )
 
-  ;; (unless (package-installed-p 'magit)
-  ;;   (package-install 'magit))
+  ;; Don't ask me to save unsaved buffers on every action
+  (setq magit-save-repository-buffers nil)
 
   (global-set-key (kbd "C-x g") 'magit-status)
 #+end_src
@@ -1175,3 +1312,5 @@ We create a bootstrap file to load all the lisp files that were generated by the
 #+begin_quote
 All we can do is try.
 #+end_quote
+
+
