@@ -826,8 +826,8 @@ Opt in line numbers on these modes regardless of global setting
     ;; Make it so all '.tsx' files auto load 'typescript-mode'
     (add-to-list 'auto-mode-alist '("\\.tsx\\'" . typescript-mode))
 
-    ;; Use 2 spaces when tabbing JS elements
-    (setq-default typescript-indent-level 2)
+    ;; Use 4 spaces when tabbing TS elements
+    (setq-default typescript-indent-level 4)
 
     ;; Indent switch statements normally
     (setq js2-indent-switch-clauses t)
