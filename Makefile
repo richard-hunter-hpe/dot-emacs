@@ -11,7 +11,7 @@ DEST_FILE := $(SRC_DIR)/emacs.el
 DEST_DIR := $(SRC_DIR)/lisp
 
 # EMACS_BINARY should point to your installation of GNU emacs
-EMACS_BINARY := /Users/rhunter/git/dev/emacs/src/emacs
+EMACS_BINARY := /Users/hunterri/git/emacs/src/emacs
 
 # The following will compile emacs.org to emacs.el
 EMACS = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"emacs.org\")")
