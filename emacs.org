@@ -62,8 +62,9 @@ Set PATH for GUI emacs
 #+end_src
 
 Require some internal libs
+- =linum= is deprecated... TODO: make sure its not needed and if anything else can be removed
 #+begin_src emacs-lisp :tangle lisp/common.el
-  (require 'linum)
+  ;; (require 'linum)
   (require 'paren)
 
 #+end_src
@@ -77,19 +78,19 @@ Activate some internal features
 - display-line-number-mode:: display line numbers by default. See section on Line Numbers for a list of modes where this is disabled
 - show-paren-mode:: highlight matching parens/brackets etc
 - transient-mark-mode:: highlighting regions
-- which-function-mode:: display current function name in the mode line
+- which-function-mode:: display current function name in the mode line (TODO: disabled for causing errors)
 
 #+begin_src emacs-lisp :tangle lisp/common.el
-  (auto-compression-mode 1)
-  (column-number-mode 1)
-  (global-auto-revert-mode 1)
-  (global-font-lock-mode 1)
-  (global-hl-line-mode 1)
-  ;; Lately I've come to dislike line numbers unless pair programming, so leave off
-  ;; (global-display-line-numbers-mode 1)
-  (show-paren-mode 1)
-  (transient-mark-mode 1)
-  (which-function-mode 1)
+    (auto-compression-mode 1)
+    (column-number-mode 1)
+    (global-auto-revert-mode 1)
+    (global-font-lock-mode 1)
+    (global-hl-line-mode 1)
+    ;; Lately I've come to dislike line numbers unless pair programming, so leave off
+    ;; (global-display-line-numbers-mode 1)
+    (show-paren-mode 1)
+    (transient-mark-mode 1)
+    ;; (which-function-mode 1)
 #+end_src
 
 No need to backup. Let's be brave.
@@ -209,19 +210,36 @@ Open file system read-only files as read-only in Emacs as well
 ** Setup the package manager
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
-(require 'package)
+  (require 'package)
 
-(setq package-user-dir (expand-file-name "~/.emacs.d/lisp/vendor"))
+  ;; straight.el
+;  (defvar bootstrap-version)
+;  (let ((bootstrap-file
+;         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+;        (bootstrap-version 6))
+;    (unless (file-exists-p bootstrap-file)
+;      (with-current-buffer
+;          (url-retrieve-synchronously
+;           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+;           'silent 'inhibit-cookies)
+;        (goto-char (point-max))
+;        (eval-print-last-sexp)))
+;    (load bootstrap-file nil 'nomessage))
 
-(setq package-archives
-      '(("melpa"        . "http://melpa.org/packages/")
-        ("gnu"          . "http://elpa.gnu.org/packages/")
-        ("org"          . "http://orgmode.org/elpa/")))
+  ;;(add-to-list 'load-path "~/.emacs.d/straight/build")
 
-(package-initialize)
+  (setq package-user-dir (expand-file-name "~/.emacs.d/lisp/vendor"))
 
-(when (not package-archive-contents)
-  (package-refresh-contents))
+  (setq package-archives
+        '(("melpa"        . "http://melpa.org/packages/")
+          ("gnu"          . "http://elpa.gnu.org/packages/")
+          ("org"          . "http://orgmode.org/elpa/")))
+
+  (package-initialize)
+
+  (when (not package-archive-contents)
+    (package-refresh-contents))
+
 #+end_src
 
 *** Install and configure =use-package=
@@ -344,8 +362,6 @@ Manual and configuration details can be found [[https://protesilaos.com/modus-th
             (header-date . (grayscale workaholic bold-today))
             (scheduled . uniform))
           )
-    ;; Load the theme files before enabling a theme (else you get an error).
-    (modus-themes-load-themes)
     ;; uncomment below to load modus themes as default
     ;; :config
     ;; (modus-themes-load-vivendi)
@@ -552,11 +568,23 @@ Install =buffer-move= for arranging buffers
 #+end_src
 
 * vTerm
+- vTerm
+- vterm-toggle: [[https://github.com/jixiuf/vterm-toggle]]
 #+begin_src emacs-lisp :tangle lisp/packages.el
-    (use-package vterm
-        :ensure t
-        :hook (after-init . vterm-mode))
+  (use-package vterm
+      :ensure t
+      :hook (after-init . vterm-mode))
+
+  (use-package vterm-toggle
+    :ensure t
+    :bind (("<f9>" . 'vterm-toggle)
+           ("C-<f9>" . 'vterm-toggle-cd)
+           :map vterm-mode-map
+           ("<f9>" . 'vterm-toggle)
+           ([(control return)] . #'vterm-toggle-insert-cd)))
   #+end_src
+
+
 
 * Dired
 ** Configuration
@@ -605,11 +633,11 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
        (let* ((fn-list (dired-get-marked-files nil arg)))
          (mapc 'find-file fn-list)))))
 #+end_src
+
 * LSP & Company
 ** LSP
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-;;   (setq package-selected-packages '(lsp-mode yasnippet lsp-ui lsp-treemacs helm-lsp projectile hydra flycheck company avy which-key helm-xref json-mode))
-   (setq package-selected-packages '(lsp-mode yasnippet lsp-ui lsp-treemacs projectile hydra flycheck company avy which-key helm-xref json-mode))
+   (setq package-selected-packages '(lsp-mode yasnippet lsp-ui lsp-treemacs helm-lsp projectile hydra flycheck company avy which-key helm-xref json-mode))
    (when (cl-find-if-not #'package-installed-p package-selected-packages)
      (package-refresh-contents)
      (mapc #'package-install package-selected-packages))
@@ -642,6 +670,8 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 
    (with-eval-after-load 'lsp-mode
      (require 'dap-chrome)
+     (require 'dap-firefox)
+     (yas-minor-mode)
      (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
                                            ;(yas-global-mode))
 
@@ -662,13 +692,11 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 #+end_src
 
 * TRAMP
-TRAMP can be used for editing files remotely. =docker-tramp= allows for editing files within docker containers.
+TRAMP can be used for editing files remotely.
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (use-package docker-tramp
-    :ensure t)
-
   (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
 #+end_src
+
 * Additional Hooks
 ** Prog Mode
 Set the =prog-mode= hook. =prog-mode= is a major mode provided by Emacs. Typically, it is not used directly, instead many programming-related major modes are derived from this mode. Any hooks defined here will be applied to all modes that derive from it, inluding =js-mode= and more.
@@ -757,12 +785,19 @@ Opt in line numbers on these modes regardless of global setting
 #+end_src
 
 * Languages
+** Emacs Lisp
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+#+end_src
+
 ** JavaScript
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   ;; Make it so all '.js' files auto load 'js-mode'
   (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
 
   ;; Make it so all '.jsx' files auto load 'js-mode'
+  (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-jsx-mode))
+
+  ;; Make it so all '.mdx' files auto load 'js-mode'
   (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-jsx-mode))
 
   ;; turn on lsp mode
@@ -797,7 +832,7 @@ Opt in line numbers on these modes regardless of global setting
 
   (add-hook 'js-mode-hook #'smartparens-mode)
 
-  (setq-default flycheck-disabled-checkers '(lsp))
+  ;; (setq-default flycheck-disabled-checkers '(lsp))
 
   ;; use eslint in js mode over lsp
   (add-hook 'js2-mode-local-vars-hook
@@ -835,28 +870,86 @@ Opt in line numbers on these modes regardless of global setting
   ;; Load prettier in js-mode
   (require 'prettier-js)
   (add-hook 'js-mode-hook 'prettier-js-mode)
-  (add-hook 'typescript-mode-hook 'prettier-js-mode)
 #+end_src
 
 ** TypeScript
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-    (use-package typescript-mode
-      :ensure t
-      :hook (typescript-mode-hook . lsp-deferred))
+  (use-package typescript-mode
+    :ensure t
+    :hook ((typescript-mode-hook . lsp-deferred)
+           (typescript-mode-hook . add-node-modules-path)))
 
-    ;; Make it so all '.ts' files auto load 'typescript-mode'
-    (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
+  ;; Make it so all '.ts' files auto load 'typescript-mode'
+  (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
 
-    ;; Make it so all '.tsx' files auto load 'typescript-mode'
-    (add-to-list 'auto-mode-alist '("\\.tsx\\'" . typescript-mode))
+  ;; Make it so all '.tsx' files auto load 'typescript-mode'
+  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . typescript-mode))
 
-    ;; Use 4 spaces when tabbing TS elements
-    (setq-default typescript-indent-level 4)
+  ;; Use 2 spaces when tabbing TS elements
+  (setq-default typescript-indent-level 2)
 
-    ;; Indent switch statements normally
-    (setq js2-indent-switch-clauses t)
+  ;; Indent switch statements normally
+  (setq js2-indent-switch-clauses t)
+
+  (add-hook 'typescript-mode-hook 'prettier-js-mode)
+  (add-hook 'typescript-mode-hook 'yas-global-mode)
+
+  (add-hook 'typescript-mode
+            (lambda ()
+              (when (flycheck-may-enable-checker 'javascript-eslint)
+                (flycheck-select-checker 'javascript-eslint))))
+
+
+  (defun setup-ts-mode ()
+    "Setup function for JavaScript"
+    (interactive)
+    (flycheck-mode +1)
+    (setq flycheck-check-syntax-automatically '(save mode-enabled))
+    (eldoc-mode +1)
+    (define-key global-map [remap js-find-symbol] #'lsp-ui-peek-find-definitions)
+    (define-key global-map [remap xref-find-references] #'lsp-ui-peek-find-references)
+    (company-mode +1))
+
+  (add-hook 'typescript-mode-hook #'setup-ts-mode)
 
 #+end_src
+
+
+*** TSX Mode
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+;  (use-package graphql-mode
+;    :ensure t)
+
+;  (use-package coverlay
+;    :ensure t)
+
+;  (use-package origami
+;    :ensure t)
+
+;  (use-package tree-sitter
+;    :ensure t)
+
+;  (use-package tree-sitter-langs
+;    :ensure t)
+
+
+  ;; (add-hook 'typescript-mode-hook 'tree-sitter-hl-mode)
+
+  ;(straight-use-package '(css-in-js-mode :type git :host github :repo "orzechowskid/tree-sitter-css-in-js"))
+
+  ; (require 'css-in-js)
+
+  ; (straight-use-package '(tsx-mode :type git :host github :repo "orzechowskid/tsx-mode.el" :branch "emacs29"))
+
+  ; (require 'tsx-mode)
+
+  ;; Make it so all '.tsx' files auto load 'typescript-mode'
+  ;; (add-to-list 'auto-mode-alist '("\\.tsx\\'" . tsx-mode))
+
+
+
+#+end_src
+
 ** Python
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (use-package python ;; mode is python-mode but package is called python
@@ -932,44 +1025,54 @@ Opt in line numbers on these modes regardless of global setting
 Define a function =my-markdown-preview= for conveniently previewing markdown files in the GitHub style.
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (setq markdown-preview-stylesheets (list "~/github-markdown.css"))
+    (setq markdown-preview-stylesheets (list "~/github-markdown.css"))
 
-  (use-package markdown-mode
-    :ensure t
-    :mode ("\\.md\\'" . gfm-mode)
-    :commands (markdown-mode gfm-mode)
-    :config
-    (setq markdown-command "pandoc -t html5"))
-    ;;(setq markdown-command "markdown"))
+    (use-package markdown-mode
+      :ensure t
+      :mode ("\\.md\\'" . gfm-mode)
+      :commands (markdown-mode gfm-mode)
+      :config
+      (setq markdown-command "pandoc -t html5"))
+      ;;(setq markdown-command "markdown"))
 
-  (use-package simple-httpd
-    :ensure t
-    :config
-    (setq httpd-port 7070)
-    (setq httpd-host (system-name)))
+    (use-package simple-httpd
+      :ensure t
+      :config
+      (setq httpd-port 7070)
+      (setq httpd-host (system-name)))
 
-  (use-package impatient-mode
-    :ensure t
-    :commands impatient-mode)
+    (use-package impatient-mode
+      :ensure t
+      :commands impatient-mode)
 
-  (defun my-markdown-filter (buffer)
-    (princ
-     (with-temp-buffer
-       (let ((tmp (buffer-name)))
-         (set-buffer buffer)
-         (set-buffer (markdown tmp))
-         (format "<!DOCTYPE html><html><title>Markdown preview</title><link rel=\"stylesheet\" href = \"https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/3.0.1/github-markdown.min.css\"/>
-  <body><article class=\"markdown-body\" style=\"box-sizing: border-box;min-width: 200px;max-width: 980px;margin: 0 auto;padding: 45px;\">%s</article></body></html>" (buffer-string))))
-     (current-buffer)))
+    (defun my-markdown-filter (buffer)
+      (princ
+       (with-temp-buffer
+         (let ((tmp (buffer-name)))
+           (set-buffer buffer)
+           (set-buffer (markdown tmp))
+           (format "<!DOCTYPE html><html><title>Markdown preview</title><link rel=\"stylesheet\" href = \"https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown.min.css\"/>
+    <body><article class=\"markdown-body\" style=\"box-sizing: border-box;min-width: 200px;max-width: 980px;margin: 0 auto;padding: 45px;\">%s</article></body></html>" (buffer-string))))
+       (current-buffer)))
 
-  (defun my-markdown-preview ()
-    "Preview markdown."
-    (interactive)
-    (unless (process-status "httpd")
-      (httpd-start))
-    (impatient-mode)
-    (imp-set-user-filter 'my-markdown-filter)
-    (imp-visit-buffer))
+
+  (defun my-imp-visit-buffer ()
+  "Visit the buffer in a browser."
+  (interactive)
+  (browse-url
+  (format "http://localhost:%d/imp/live/%s/"
+  httpd-port (url-hexify-string (buffer-name)))))
+
+
+    (defun my-markdown-preview ()
+      "Preview markdown."
+      (interactive)
+      (unless (process-status "httpd")
+        (httpd-start))
+      (impatient-mode)
+      (imp-set-user-filter 'my-markdown-filter)
+      ;;(my-imp-visit-buffer))
+      (imp-visit-buffer))
 #+end_src
 
 * Org Mode
@@ -1039,6 +1142,10 @@ Visual fill mode, visual fill column mode settings
                    entry (file+headline "~/org/notes.org" "Notes")
                    "** %?"
                    :empty-lines 0)
+                  ("q" "Question"
+                   entry (file+headline "~/org/questions.org" "General Question")
+                   "* QUESTION %?\n:Created: %T\n Answer: "
+                   :empty-lines 0)
                   ("c" "Code To-Do"
                    entry (file+headline "~/org/todos.org" "Code Related Tasks")
                    "* TODO [#B] %?\n:Created: %T\n%i\n%a\nProposed Solution: "
@@ -1079,8 +1186,10 @@ Visual fill mode, visual fill column mode settings
                         (:endgroup . nil)
 
                         ;; Code TODOs tags
+                        (:startgroup . nil)
                         ("backend" . ?k)
                         ("ui" . ?f)
+                        (:endgroup . nil)
 
                         ;; Special tags
                         ("CRITICAL" . ?y)
@@ -1126,27 +1235,43 @@ Visual fill mode, visual fill column mode settings
   (setq org-agenda-sticky t)
   (setq org-agenda-inhibit-startup nil)
   (setq org-agenda-window-setup "other-tab")
-  
+
   ;; Compact the block agenda view (disabled)
   (setq org-agenda-compact-blocks nil)
   (setq org-deadline-warning-days 10)
 
-  (setq org-agenda-custom-commands
-        '(("W" "Weekly Review"
-           ((agenda "" ((org-agenda-span 7)))
-            (todo "GOAL"
-                  ((org-agenda-overriding-header "Sprint Goals")))
-            (todo "KAIZEN"
-                  ((org-agenda-overriding-header "Kaizen")))
-            (todo "TODO|IN PROGRESS"
-                  ((org-agenda-overriding-header "My Todos")))
-            (todo "TASK"
-                  ((org-agenda-overriding-header "Team Tasks")))
-            ))))
+  ;; (setq org-agenda-custom-commands
+  ;;       '(("W" "Weekly Review"
+  ;;          ((agenda "" ((org-agenda-span 7)))
+  ;;           (todo "GOAL"
+  ;;                 ((org-agenda-overriding-header "Sprint Goals")))
+  ;;           (todo "KAIZEN"
+  ;;                 ((org-agenda-overriding-header "Kaizen")))
+  ;;           (todo "TODO|IN PROGRESS"
+  ;;                 ((org-agenda-overriding-header "My Todos")))
+  ;;           (todo "TASK"
+  ;;                 ((org-agenda-overriding-header "Team Tasks")))
+  ;;           ))))
 #+end_src
 
+
+*** Custom Agenda Commands
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  ;; Agenda View "d"
+    ;; Agenda View "d"
+    (defun air-org-skip-subtree-if-priority (priority)
+      "Skip an agenda subtree if it has a priority of PRIORITY.
+
+      PRIORITY may be one of the characters ?A, ?B, or ?C."
+      (let ((subtree-end (save-excursion (org-end-of-subtree t)))
+            (pri-value (* 1000 (- org-lowest-priority priority)))
+            (pri-current (org-get-priority (thing-at-point 'line t))))
+        (if (= pri-value pri-current)
+            subtree-end
+          nil)))
+
+    (setq org-agenda-skip-deadline-if-done t)
+
+    ;; Agenda View "d"
   (defun air-org-skip-subtree-if-priority (priority)
     "Skip an agenda subtree if it has a priority of PRIORITY.
 
@@ -1168,16 +1293,15 @@ Visual fill mode, visual fill column mode settings
            ;; Display items with priority A
            ((tags "PRIORITY=\"A\""
                   ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                   (org-agenda-overriding-header "High-priority unfinished tasks:")))
+                   (org-agenda-overriding-header "High-priority Todos:")))
 
             ;; View 7 days in the calendar view
-            ;; (agenda "" ((org-agenda-span 7)))
+            ;; (agenda "" ((org-agenda-span 5)))
 
             ;; Display items with priority B (really it is view all items minus A & C)
-            (alltodo ""
+            (todo "TODO"
                      ((org-agenda-skip-function '(or (air-org-skip-subtree-if-priority ?A)
                                                      (air-org-skip-subtree-if-priority ?C)
-                                                     (org-agenda-skip-entry-if 'todo '("GOAL" "KAIZEN"))
                                                      (org-agenda-skip-if nil '(scheduled deadline))))
                       (org-agenda-overriding-header "ALL normal priority tasks:")))
 
@@ -1185,19 +1309,32 @@ Visual fill mode, visual fill column mode settings
             (tags "PRIORITY=\"C\""
                   ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
                    (org-agenda-overriding-header "Low-priority Unfinished tasks:")))
-            )
+
+            (todo "TASK|GAP"
+                  ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                   (org-agenda-overriding-header "Tasks and Organizational Gaps:")))
+
+            (todo "QUESTION"
+                  ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                   (org-agenda-overriding-header "Questions needing Answers")))
+
+
+            ) ;; end agenda sections
+
+
 
            ;; Don't compress things (change to suite your tastes)
            ((org-agenda-compact-blocks nil)))
           ))
+
 #+end_src
 
 ** Todo states
 #+begin_src emacs-lisp :tangle lisp/hooks.el
 
   (setq org-todo-keywords
-        '((sequence "TODO(t)" "PLANNING(p)" "IN PROGRESS(i@/!)" "BLOCKED(b@)" "|" "DONE(d!)" "WONT-DO(w@/!)")
-          (sequence "TASK(f)"  "|" "WONT-DO(w@/!)" "DONE(d)")
+        '((sequence "TODO(t)" "IN PROGRESS(i@/!)" "BLOCKED(b@)" "|" "DONE(d!)" "WONT-DO(w@/!)")
+          (sequence "TASK(f)"  "GAP(p)" "|" "OBE(w@/!)" "DONE(d)")
           (sequence "KAIZEN(k)"  "|" "DONE(d)")
           (sequence "QUESTION(q)"  "|" "ANSWERED(a)")
           (sequence "GOAL(g)" "|" "DELIVERED(y!)")))
@@ -1208,7 +1345,9 @@ Visual fill mode, visual fill column mode settings
           ("PLANNING" . (:foreground "DeepPink" :weight bold))
           ("BLOCKED" . (:foreground "Red" :weight bold))
           ("DONE" . (:foreground "light sea green"))
-          ("TASK" . (:foreground "magenta"))))
+          ("TASK" . (:foreground "magenta"))
+          ("QUESTION" . (:foreground "maroon2"))
+          ("GAP" . (:foreground "IndianRed1"))))
 #+end_src
 
 ** Visual settings
@@ -1243,44 +1382,47 @@ Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beaut
   ;; (add-hook 'org-mode-hook 'variable-pitch-mode)
 #+end_src
 
-** Bootstrap Org
-    #+begin_src emacs-lisp :tangle lisp/hooks.el
-      ;(use-package org
-      ;  :hook ((org-mode-hook . org-bullets-mode))
-      ;  )
-    #+end_src
-
 ** Org Bullets
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-   (use-package org-bullets
+  (use-package org-bullets
+    :ensure t
+  ;  :after org
+  ;  :hook (org-mode . org-bullets-mode)
+    :custom
+    (org-bullets-bullet-list '("⁖" "◉" "○" "✸" "✿")))
+#+end_src
+
+** Bootstrap Org
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (add-hook 'org-mode-hook 'org-bullets-mode)
+#+end_src
+
+** PlantUML
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+   (use-package plantuml-mode
      :ensure t
-     :after org
-     :hook (org-mode . org-bullets-mode)
-     :custom
-     (org-bullets-bullet-list '("⁖" "◉" "○" "✸" "✿")))
+     )
 
+   (setq plantuml-output-type "png")
+   (setq org-plantuml-jar-path "~/plantuml.jar")
+   (setq plantuml-jar-path "~/plantuml.jar")
+   (setq plantuml-default-exec-mode 'jar)
 
-    (use-package plantuml-mode
-      :ensure t
-      )
+   ;; Make it so all '.puml' files auto load 'plantuml-mode'
+   (add-to-list 'auto-mode-alist '("\\.puml\\'" . plantuml-mode))
+#+end_src
 
-    (setq plantuml-output-type "png")
-    (setq org-plantuml-jar-path "~/plantuml.jar")
-    (setq plantuml-jar-path "~/plantuml.jar")
-    (setq plantuml-default-exec-mode 'jar)
-
-    ;; Make it so all '.puml' files auto load 'plantuml-mode'
-    (add-to-list 'auto-mode-alist '("\\.puml\\'" . plantuml-mode))
-
-    ;; load language support
-    (org-babel-do-load-languages
-     'org-babel-load-languages
-     '((emacs-lisp . t)
-       (python . t)
-       (shell . t)
-       (js . t)
-       (plantuml . t)
-       ))
+** Org Babel Language Support
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+   ;; load language support
+   (org-babel-do-load-languages
+    'org-babel-load-languages
+    '((emacs-lisp . t)
+      (python . t)
+      (shell . t)
+      (js . t)
+      (plantuml . t)
+      ))
 #+end_src
 
 ** Org Mode Custom Keybindings
@@ -1308,7 +1450,6 @@ Pull =magit= and launch it with ~C-x g~
    '(ediff-split-window-function (quote split-window-horizontally)))
 #+end_src
 * Custom Interface Interactions
-
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (defun rh-reload-emacs-init ()
     (interactive)
