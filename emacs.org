@@ -570,10 +570,11 @@ Install =buffer-move= for arranging buffers
 * vTerm
 - vTerm
 - vterm-toggle: [[https://github.com/jixiuf/vterm-toggle]]
+- multi-vterm: https://github.com/suonlight/multi-vterm
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package vterm
-      :ensure t
-      :hook (after-init . vterm-mode))
+    :ensure t
+    :hook (after-init . vterm-mode))
 
   (use-package vterm-toggle
     :ensure t
@@ -582,7 +583,9 @@ Install =buffer-move= for arranging buffers
            :map vterm-mode-map
            ("<f9>" . 'vterm-toggle)
            ([(control return)] . #'vterm-toggle-insert-cd)))
-  #+end_src
+
+  (use-package multi-vterm :ensure t)
+#+end_src
 
 
 
@@ -894,13 +897,14 @@ Opt in line numbers on these modes regardless of global setting
   (add-hook 'typescript-mode-hook 'prettier-js-mode)
   (add-hook 'typescript-mode-hook 'yas-global-mode)
 
-  (add-hook 'typescript-mode
-            (lambda ()
-              (when (flycheck-may-enable-checker 'javascript-eslint)
-                (flycheck-select-checker 'javascript-eslint))))
+  ;; (add-hook 'typescript-mode-hook
+  ;;           (lambda ()
+  ;;             (when (flycheck-may-enable-checker 'javascript-eslint)
+  ;;               (flycheck-select-checker 'javascript-eslint))))
 
 
-  (defun setup-ts-mode ()
+  (defun
+      setup-ts-mode ()
     "Setup function for JavaScript"
     (interactive)
     (flycheck-mode +1)
