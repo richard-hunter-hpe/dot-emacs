@@ -9,12 +9,36 @@
 - [[*Org Mode][Org Mode]]
 - [[*JavaScript][JavaScript]]
 
+
+* Early Init
+#+begin_src emacs-lisp :tangle lisp/early-init.el
+  (setq package-enable-at-startup nil)
+
+  ;; ;; bootstrap straight.el
+  ;; (defvar bootstrap-version)
+  ;;     (let ((bootstrap-file
+  ;;            (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+  ;;           (bootstrap-version 6))
+  ;;       (unless (file-exists-p bootstrap-file)
+  ;;         (with-current-buffer
+  ;;             (url-retrieve-synchronously
+  ;;              "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+  ;;              'silent 'inhibit-cookies)
+  ;;           (goto-char (point-max))
+  ;;           (eval-print-last-sexp)))
+  ;;       (load bootstrap-file nil 'nomessage))
+
+  ;; ;; set use-package to use straight.el
+  ;; (setq straight-use-package-by-default t)
+#+end_src
+
 * Startup Config
 ** Basic Internals
 - Turn off mouse interface early in startup to avoid momentary display
 - hide certain elements if in GUI emacs including scroll bar, tool bar
 - set default window sizes for GUI emacs
 #+begin_src emacs-lisp :tangle lisp/common.el
+  (setq package-enable-at-startup nil)
   (setq frame-inhibit-implied-resize t)
   (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
   (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
@@ -52,7 +76,7 @@ Set PATH for GUI emacs
   (setq exec-path (append exec-path '("/opt/homebrew/bin")))
   (setq exec-path (append exec-path '("/opt/homebrew/sbin")))
   (setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v16.16.0/bin")))
-  (setq exec-path (append exec-path '("/Users/hunterri/git/richard-hunter/dscc-authz-client")))
+  ;; (setq exec-path (append exec-path '("/Users/hunterri/git/richard-hunter/dscc-authz-client")))
 
   (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
   (setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/bin"))
@@ -210,35 +234,39 @@ Open file system read-only files as read-only in Emacs as well
 ** Setup the package manager
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (require 'package)
+    ;; bootstrap straight.el
 
-  ;; straight.el
-;  (defvar bootstrap-version)
-;  (let ((bootstrap-file
-;         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-;        (bootstrap-version 6))
-;    (unless (file-exists-p bootstrap-file)
-;      (with-current-buffer
-;          (url-retrieve-synchronously
-;           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-;           'silent 'inhibit-cookies)
-;        (goto-char (point-max))
-;        (eval-print-last-sexp)))
-;    (load bootstrap-file nil 'nomessage))
+  (defvar bootstrap-version)
+      (let ((bootstrap-file
+             (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+            (bootstrap-version 6))
+        (unless (file-exists-p bootstrap-file)
+          (with-current-buffer
+              (url-retrieve-synchronously
+               "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+               'silent 'inhibit-cookies)
+            (goto-char (point-max))
+            (eval-print-last-sexp)))
+        (load bootstrap-file nil 'nomessage))
+
+  ;; set use-package to use straight.el
+  (setq straight-use-package-by-default t)
+  ;; straight.el (require 'package)
 
   ;;(add-to-list 'load-path "~/.emacs.d/straight/build")
 
-  (setq package-user-dir (expand-file-name "~/.emacs.d/lisp/vendor"))
+  ;; straigt.el all below
+  ;; (setq package-user-dir (expand-file-name "~/.emacs.d/lisp/vendor"))
 
-  (setq package-archives
-        '(("melpa"        . "http://melpa.org/packages/")
-          ("gnu"          . "http://elpa.gnu.org/packages/")
-          ("org"          . "http://orgmode.org/elpa/")))
+  ;; (setq package-archives
+  ;;       '(("melpa"        . "http://melpa.org/packages/")
+  ;;         ("gnu"          . "http://elpa.gnu.org/packages/")
+  ;;         ("org"          . "http://orgmode.org/elpa/")))
 
-  (package-initialize)
+  ;; (package-initialize)
 
-  (when (not package-archive-contents)
-    (package-refresh-contents))
+  ;; (when (not package-archive-contents)
+  ;;   (package-refresh-contents))
 
 #+end_src
 
@@ -284,9 +312,7 @@ Enable smooth scroll and scroll window under mouse
 ** Cursory
 Lightweight package for easily creating cursor presets
 #+begin_src emacs-lisp :tangle lisp/packages.el
-   (use-package cursory
-     :ensure t)
-   (require 'cursory)
+   (use-package cursory)
    (setq cursory-presets
           '((bar
              :cursor-type (bar . 2)
@@ -342,7 +368,6 @@ Manual and configuration details can be found [[https://protesilaos.com/modus-th
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package modus-themes
-    :ensure t
     :init
     (setq modus-themes-slanted-constructs t
           modus-themes-bold-constructs nil
@@ -372,7 +397,6 @@ Manual and configuration details can be found [[https://protesilaos.com/modus-th
 I like =doom-themes= also...
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package doom-themes
-    :ensure t
     ;; currently enjoying doom-xcode theme
     :config (load-theme 'doom-xcode t)
   )
@@ -398,7 +422,6 @@ Customize Tab Bar face
   =doom-modeline= is a very sensible default modeline, so sticking with it for a while
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package doom-modeline
-  :ensure t
   :config (doom-modeline-mode))
 #+end_src
 
@@ -532,7 +555,6 @@ Here we add custom utility functions
 Install and configure =orderless= a completetions framework helper. I use it in tandem with the built-in =icomplete=.
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package orderless
-    :ensure t
     :init (icomplete-mode) ; optional but recommended!
     :custom (completion-styles '(orderless)))
 
@@ -543,7 +565,6 @@ Install and configure =orderless= a completetions framework helper. I use it in 
 ** Helm
 #+begin_src emacs-lisp :tangle lisp/packages.el
 ;;  (use-package helm
- ;;    :ensure t
   ;;   :init
   ;;   (setq helm-split-window-in-side-p           t ; open helm buffer inside current window, not occupy whole other window
   ;;         helm-move-to-line-cycle-in-source     t ; move to end or beginning of source when reaching top or bottom of source.
@@ -563,8 +584,7 @@ Install and configure =orderless= a completetions framework helper. I use it in 
 * Buffer Move
 Install =buffer-move= for arranging buffers
 #+begin_src emacs-lisp :tangle lisp/packages.el
-(unless (package-installed-p 'buffer-move)
-  (package-install 'buffer-move))
+  (use-package buffer-move)
 #+end_src
 
 * vTerm
@@ -573,18 +593,16 @@ Install =buffer-move= for arranging buffers
 - multi-vterm: https://github.com/suonlight/multi-vterm
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package vterm
-    :ensure t
     :hook (after-init . vterm-mode))
 
   (use-package vterm-toggle
-    :ensure t
     :bind (("<f9>" . 'vterm-toggle)
            ("C-<f9>" . 'vterm-toggle-cd)
            :map vterm-mode-map
            ("<f9>" . 'vterm-toggle)
            ([(control return)] . #'vterm-toggle-insert-cd)))
 
-  (use-package multi-vterm :ensure t)
+  (use-package multi-vterm)
 #+end_src
 
 
@@ -596,6 +614,7 @@ Setup =dired= the way I like it.
   (require 'dired-x) ;; enable extra features by default
   (setq insert-directory-program "gls" dired-use-ls-dired t)
   (use-package dired
+    :straight nil
     :config
     (setq dired-dwim-target t)
     (setq dired-listing-switches
@@ -617,7 +636,6 @@ Also auto refresh dired, but be quiet about it
 * Debugging: ~dap-mode~
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (use-package dap-mode
-    :ensure t
     :custom
       (dap-auto-configure-features '(sessions locals expressions controls tooltip))
     :config
@@ -640,51 +658,83 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 * LSP & Company
 ** LSP
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-   (setq package-selected-packages '(lsp-mode yasnippet lsp-ui lsp-treemacs helm-lsp projectile hydra flycheck company avy which-key helm-xref json-mode))
-   (when (cl-find-if-not #'package-installed-p package-selected-packages)
-     (package-refresh-contents)
-     (mapc #'package-install package-selected-packages))
+   (use-package lsp-mode
+     :init
+     ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+     (setq lsp-keymap-prefix "C-c l")
+     :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+            (js-mode . lsp)
+            ;; if you want which-key integration
+            (lsp-mode . lsp-enable-which-key-integration))
+     :commands lsp)
 
-   (setq helm-buffer-details-flag nil)
+   ;; optionally
+   (use-package lsp-ui :commands lsp-ui-mode)
+  (use-package company)
+  (use-package json-mode)
+
+   ;; if you are helm user
+   (use-package helm-lsp :commands helm-lsp-workspace-symbol)
+   ;; if you are ivy user
+   (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+   (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+
+   ;; optionally if you want to use debugger
+   (use-package dap-mode)
+   ;; (use-package dap-LANGUAGE) to load the dap adapter for your language
+
+   ;; optional if you want which-key integration
+   (use-package which-key
+       :config
+       (which-key-mode))
+
+      ;;  (setq package-selected-packages '(lsp-mode yasnippet lsp-ui lsp-treemacs helm-lsp projectile hydra flycheck company avy which-key helm-xref json-mode))
+      ;;  (when (cl-find-if-not #'package-installed-p package-selected-packages)
+           ;;(package-refresh-contents)
+       ;    (mapc #'package-install package-selected-packages))
+
+   (setq 
+    helm-buffer-details-flag nil)
    (helm-mode)
-   (require 'helm-xref)
+   ;; (require 'helm-xref)
 
-  (defun helm-buffer-face-mode ()
-    "Helm buffer face"
-    (interactive)
-    (with-helm-buffer
-      (setq line-spacing 2)
-      (buffer-face-set '(:family "Source Code Pro" :height 150))))
+       (defun helm-buffer-face-mode ()
+         "Helm buffer face"
+         (interactive)
+         (with-helm-buffer
+           (setq line-spacing 2)
+           (buffer-face-set '(:family "Source Code Pro" :height 150))))
 
-   (add-hook 'helm-update-hook 'helm-buffer-face-mode)
+        (add-hook 'helm-update-hook 'helm-buffer-face-mode)
 
-   (define-key global-map [remap find-file] #'helm-find-files)
-   (define-key global-map [remap execute-extended-command] #'helm-M-x)
-   (define-key global-map [remap switch-to-buffer] #'helm-mini)
-   (define-key global-map (kbd "C-.") #'lsp-find-definition)
-   (which-key-mode)
-   ;; (add-hook 'prog-mode-hook #'lsp)
-   (setq gc-cons-threshold (* 100 1024 1024)
-         read-process-output-max (* 1024 1024)
-           company-idle-delay 0.0
-           company-tooltip-align-annotations t
-           company-minimum-prefix-length 1
-           create-lockfiles nil) ;; lock files will kill `npm start'
+        (define-key global-map [remap find-file] #'helm-find-files)
+        (define-key global-map [remap execute-extended-command] #'helm-M-x)
+        (define-key global-map [remap switch-to-buffer] #'helm-mini)
+        (define-key global-map (kbd "C-.") #'lsp-find-definition)
+        (which-key-mode)
+         (add-hook 'prog-mode-hook #'lsp)
+        (setq gc-cons-threshold (* 100 1024 1024)
+              read-process-output-max (* 1024 1024)
+                company-idle-delay 0.0
+                company-tooltip-align-annotations t
+                company-minimum-prefix-length 1
+                create-lockfiles nil) ;; lock files will kill `npm start'
 
-   (with-eval-after-load 'lsp-mode
-     (require 'dap-chrome)
-     (require 'dap-firefox)
-     (yas-minor-mode)
-     (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
-                                           ;(yas-global-mode))
+  (with-eval-after-load 'lsp-mode
+    (require 'dap-chrome)
+    (require 'dap-firefox)
+    ;; (yas-minor-mode)
+    (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
 
-   ;; don't spam my repos with logfiles
-   (setenv "TSSERVER_LOG_FILE" "/tmp/tsserver.log")
+         ;;don't spam my repos with logfiles
+        (setenv "TSSERVER_LOG_FILE" "/tmp/tsserver.log")
 
+        (add-to-list 'load-path (expand-file-name "lib/lsp-mode" user-emacs-directory))
+        (add-to-list 'load-path (expand-file-name "lib/lsp-mode/clients" user-emacs-directory))
 
-   (setq lsp-progress-via-spinner nil)
-   ;; hide lsp ui code actions
-   (setq lsp-ui-sideline-show-code-actions nil)
+     ;   (setq lsp-progress-via-spinner nil)
+        ;; hide lsp ui code actions
+     ;   (setq lsp-ui-sideline-show-code-actions nil)
 #+end_src
 
 *** LSP UI
@@ -697,7 +747,8 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 * TRAMP
 TRAMP can be used for editing files remotely.
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+  ;; TODO: this broke install with straight.el, figure out why
+  ;; (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
 #+end_src
 
 * Additional Hooks
@@ -783,8 +834,7 @@ Opt in line numbers on these modes regardless of global setting
 
 ** SmartParens
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (use-package smartparens
-    :ensure t)
+  (use-package smartparens)
 #+end_src
 
 * Languages
@@ -794,91 +844,88 @@ Opt in line numbers on these modes regardless of global setting
 
 ** JavaScript
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  ;; Make it so all '.js' files auto load 'js-mode'
-  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
+    ;; Make it so all '.js' files auto load 'js-mode'
+    (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
 
-  ;; Make it so all '.jsx' files auto load 'js-mode'
-  (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-jsx-mode))
+    ;; Make it so all '.jsx' files auto load 'js-mode'
+    (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-jsx-mode))
 
-  ;; Make it so all '.mdx' files auto load 'js-mode'
-  (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-jsx-mode))
+    ;; Make it so all '.mdx' files auto load 'js-mode'
+    (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-jsx-mode))
 
-  ;; turn on lsp mode
-  (add-hook 'js-mode-hook #'lsp)
+    ;; turn on lsp mode
+    (add-hook 'js-mode-hook #'lsp)
 
-  ;; dont use tree sitter as it slows down org mode syntax highlighting in code blocks :(
-  ;; (add-hook 'js-mode-hook #'tree-sitter-hl-mode)
-
-
-  (defun setup-js-mode ()
-    "Setup function for JavaScript"
-    (interactive)
-    (flycheck-mode +1)
-    (setq flycheck-check-syntax-automatically '(save mode-enabled))
-    (eldoc-mode +1)
-    (define-key global-map [remap js-find-symbol] #'lsp-ui-peek-find-definitions)
-    (define-key global-map [remap xref-find-references] #'lsp-ui-peek-find-references)
-    (require 'dap-node)
-    (dap-node-setup)
-    (company-mode +1))
-
-  (add-hook 'js-mode-hook #'setup-js-mode)
-
-  ;; Use 2 spaces when tabbing HTML elements
-  (setq-default sgml-basic-offset 2)
-
-  ;; Use 2 spaces when tabbing JS elements
-  (setq-default js-indent-level 2)
-
-  ;; Indent switch statements normally
-  (setq js2-indent-switch-body t)
-
-  (add-hook 'js-mode-hook #'smartparens-mode)
-
-  ;; (setq-default flycheck-disabled-checkers '(lsp))
-
-  ;; use eslint in js mode over lsp
-  (add-hook 'js2-mode-local-vars-hook
-            (lambda ()
-              (when (flycheck-may-enable-checker 'javascript-eslint)
-                (flycheck-select-checker 'javascript-eslint))))
-
-  ;; use eslint installed locally
-  (defun my/use-eslint-from-node-modules ()
-    (let* ((root (locate-dominating-file
-                  (or (buffer-file-name) default-directory)
-                  "node_modules"))
-           (eslint
-            (and root
-                 (expand-file-name "node_modules/.bin/eslint"
-                                   root))))
-      (when (and eslint (file-executable-p eslint))
-        (setq-local flycheck-javascript-eslint-executable eslint))))
-
-  (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
+    ;; dont use tree sitter as it slows down org mode syntax highlighting in code blocks :(
+    ;; (add-hook 'js-mode-hook #'tree-sitter-hl-mode)
 
 
-  ;; Local node modules located here
+    (defun setup-js-mode ()
+      "Setup function for JavaScript"
+      (interactive)
+      (flycheck-mode +1)
+      (setq flycheck-check-syntax-automatically '(save mode-enabled))
+      (eldoc-mode +1)
+      (define-key global-map [remap js-find-symbol] #'lsp-ui-peek-find-definitions)
+      (define-key global-map [remap xref-find-references] #'lsp-ui-peek-find-references)
+      (require 'dap-node)
+      (dap-node-setup)
+      (company-mode +1))
 
-  (unless (package-installed-p 'add-node-modules-path)
-    (package-install 'add-node-modules-path))
+    (add-hook 'js-mode-hook #'setup-js-mode)
 
-  (require 'add-node-modules-path)
-  (eval-after-load 'js-mode
-    (add-hook 'js-mode-hook #'add-node-modules-path))
+    ;; Use 2 spaces when tabbing HTML elements
+    (setq-default sgml-basic-offset 2)
 
-  (unless (package-installed-p 'prettier-js)
-    (package-install 'prettier-js))
+    ;; Use 2 spaces when tabbing JS elements
+    (setq-default js-indent-level 2)
 
-  ;; Load prettier in js-mode
-  (require 'prettier-js)
-  (add-hook 'js-mode-hook 'prettier-js-mode)
+    ;; Indent switch statements normally
+    (setq js2-indent-switch-body t)
+
+    (add-hook 'js-mode-hook #'smartparens-mode)
+
+    ;; (setq-default flycheck-disabled-checkers '(lsp))
+
+    ;; use eslint in js mode over lsp
+    (add-hook 'js2-mode-local-vars-hook
+              (lambda ()
+                (when (flycheck-may-enable-checker 'javascript-eslint)
+                  (flycheck-select-checker 'javascript-eslint))))
+
+    ;; use eslint installed locally
+    (defun my/use-eslint-from-node-modules ()
+      (let* ((root (locate-dominating-file
+                    (or (buffer-file-name) default-directory)
+                    "node_modules"))
+             (eslint
+              (and root
+                   (expand-file-name "node_modules/.bin/eslint"
+                                     root))))
+        (when (and eslint (file-executable-p eslint))
+          (setq-local flycheck-javascript-eslint-executable eslint))))
+
+    (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
+
+
+    ;; Local node modules located here
+
+    (use-package add-node-modules-path)
+
+    (require 'add-node-modules-path)
+    (eval-after-load 'js-mode
+      (add-hook 'js-mode-hook #'add-node-modules-path))
+
+    (use-package prettier-js)
+
+    ; Load prettier in js-mode
+    (require 'prettier-js)
+    (add-hook 'js-mode-hook 'prettier-js-mode)
 #+end_src
 
 ** TypeScript
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (use-package typescript-mode
-    :ensure t
     :hook ((typescript-mode-hook . lsp-deferred)
            (typescript-mode-hook . add-node-modules-path)))
 
@@ -904,8 +951,8 @@ Opt in line numbers on these modes regardless of global setting
 
 
   (defun
-      setup-ts-mode ()
-    "Setup function for JavaScript"
+    setup-ts-mode ()
+    "Setup function for TypeScript"
     (interactive)
     (flycheck-mode +1)
     (setq flycheck-check-syntax-automatically '(save mode-enabled))
@@ -921,20 +968,14 @@ Opt in line numbers on these modes regardless of global setting
 
 *** TSX Mode
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-;  (use-package graphql-mode
-;    :ensure t)
+;  (use-package graphql-mode)
+;  (use-package coverlay)
 
-;  (use-package coverlay
-;    :ensure t)
+;  (use-package origami)
 
-;  (use-package origami
-;    :ensure t)
+;  (use-package tree-sitter)
 
-;  (use-package tree-sitter
-;    :ensure t)
-
-;  (use-package tree-sitter-langs
-;    :ensure t)
+;  (use-package tree-sitter-langs)
 
 
   ;; (add-hook 'typescript-mode-hook 'tree-sitter-hl-mode)
@@ -969,7 +1010,6 @@ Opt in line numbers on these modes regardless of global setting
   ;; (add-hook 'python-mode-hook . '(add-hook 'after-save-hook 'whitespace-cleanup))
 
   (use-package pyvenv
-    :ensure t
     :commands pyenv-activate
     :config
     (setq pyvenv-mode-line-indicator
@@ -985,7 +1025,6 @@ Opt in line numbers on these modes regardless of global setting
 
 
   (use-package lsp-pyright
-    :ensure t
     :init (setq lsp-python-ms-auto-install-server t)
     :hook (python-mode-hook . (lambda ()
                                  (require 'lsp-pyright)
@@ -994,35 +1033,30 @@ Opt in line numbers on these modes regardless of global setting
 #+end_src
 
 ** Flycheck
-#+begin_src emacs-lisp :tangle lisp/hooks.el
-(unless (package-installed-p 'flycheck)
-  (package-install 'flycheck))
-;; http://www.flycheck.org/manual/latest/index.html
-(require 'flycheck)
+[[https://www.flycheck.org/manual/latest/index.html][Flycheck Manual]]
 
-;; turn on flychecking globally
-;; (add-hook 'after-init-hook #'global-flycheck-mode)
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (use-package flycheck)
+
+  ;(require 'flycheck)
+
+  ;; turn on flychecking globally
+  ;; (add-hook 'after-init-hook #'global-flycheck-mode)
 #+end_src
 
 ** YAML
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (use-package yaml-mode
-    :ensure t
-  )
+  (use-package yaml-mode)
 #+end_src
 
 ** Docker
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (use-package dockerfile-mode
-    :ensure t
-  )
+  (use-package dockerfile-mode)
 #+end_src
 
 ** JenkinsFile
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (use-package jenkinsfile-mode
-    :ensure t
-  )
+  (use-package jenkinsfile-mode)
 #+end_src
 
 ** Markdown
@@ -1032,7 +1066,6 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
     (setq markdown-preview-stylesheets (list "~/github-markdown.css"))
 
     (use-package markdown-mode
-      :ensure t
       :mode ("\\.md\\'" . gfm-mode)
       :commands (markdown-mode gfm-mode)
       :config
@@ -1040,13 +1073,11 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
       ;;(setq markdown-command "markdown"))
 
     (use-package simple-httpd
-      :ensure t
       :config
       (setq httpd-port 7070)
       (setq httpd-host (system-name)))
 
     (use-package impatient-mode
-      :ensure t
       :commands impatient-mode)
 
     (defun my-markdown-filter (buffer)
@@ -1113,7 +1144,6 @@ Visual fill mode, visual fill column mode settings
           visual-fill-column-mode 1))
 
   (use-package visual-fill-column
-    :ensure t
     :defer t
     :hook (org-mode-hook . org-mode-visual-fill))
 #+end_src
@@ -1389,7 +1419,6 @@ Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beaut
 ** Org Bullets
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (use-package org-bullets
-    :ensure t
   ;  :after org
   ;  :hook (org-mode . org-bullets-mode)
     :custom
@@ -1403,9 +1432,7 @@ Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beaut
 
 ** PlantUML
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-   (use-package plantuml-mode
-     :ensure t
-     )
+   (use-package plantuml-mode)
 
    (setq plantuml-output-type "png")
    (setq org-plantuml-jar-path "~/plantuml.jar")
@@ -1438,9 +1465,7 @@ macOS swallows certain keybindings in terminal mode. Redfining the most importan
 * Magit
 Pull =magit= and launch it with ~C-x g~
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (use-package magit
-    :ensure t
-  )
+  (use-package magit)
 
   ;; Don't ask me to save unsaved buffers on every action
   (setq magit-save-repository-buffers nil)
@@ -1468,6 +1493,11 @@ Pull =magit= and launch it with ~C-x g~
 
 * Bootstrap
 We create a bootstrap file to load all the lisp files that were generated by the code blocks above
+#+begin_src emacs-lisp :tangle early-init.el
+  (add-to-list 'load-path "~/.emacs.d/lisp")
+  (load-library "early-init")
+#+end_src
+
 #+begin_src emacs-lisp :tangle emacs.el
   (add-to-list 'load-path "~/.emacs.d/lisp")
   (load-library "common")

@@ -4,6 +4,9 @@ SRC_DIR := $(shell pwd)
 # Source file
 SRC_FILE := $(SRC_DIR)/emacs.org
 
+# Early init file
+EARLY_INIT_FILE := $(SRC_DIR)/early-init.el
+
 # Destination file
 DEST_FILE := $(SRC_DIR)/emacs.el
 
@@ -47,7 +50,7 @@ test-gui:
 
 ## clean: Clean up
 clean:
-	rm -rf $(DEST_DIR) $(DEST_FILE)
+	rm -rf $(DEST_DIR) $(DEST_FILE) $(EARLY_INIT_FILE)
 
 
 ## install: Move files to .emacs.d
@@ -56,3 +59,4 @@ install:
 	cp $(SRC_DIR)/Makefile $(HOME)/.emacs.d
 	cd $(HOME)/.emacs.d && make build
 	mv $(HOME)/.emacs.d/emacs.el $(HOME)/.emacs.d/init.el
+	mv $(HOME)/.emacs.d/early-init.el $(HOME)/.emacs.d/early-init.el	
