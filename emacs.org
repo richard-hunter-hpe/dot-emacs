@@ -234,63 +234,72 @@ Open file system read-only files as read-only in Emacs as well
 ** Setup the package manager
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
-    ;; bootstrap straight.el
+      ;; bootstrap straight.el
 
-  (defvar bootstrap-version)
-      (let ((bootstrap-file
-             (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-            (bootstrap-version 6))
-        (unless (file-exists-p bootstrap-file)
-          (with-current-buffer
-              (url-retrieve-synchronously
-               "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-               'silent 'inhibit-cookies)
-            (goto-char (point-max))
-            (eval-print-last-sexp)))
-        (load bootstrap-file nil 'nomessage))
+    (defvar bootstrap-version)
+        (let ((bootstrap-file
+               (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+              (bootstrap-version 6))
+          (unless (file-exists-p bootstrap-file)
+            (with-current-buffer
+                (url-retrieve-synchronously
+                 "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+                 'silent 'inhibit-cookies)
+              (goto-char (point-max))
+              (eval-print-last-sexp)))
+          (load bootstrap-file nil 'nomessage))
 
-  ;; set use-package to use straight.el
-  (setq straight-use-package-by-default t)
-  ;; straight.el (require 'package)
+    ;; set use-package to use straight.el
+    (straight-use-package 'use-package)
 
-  ;;(add-to-list 'load-path "~/.emacs.d/straight/build")
+    ;; Configure use-package to use straight.el by default
+    (use-package straight
+      :custom
+      (straight-use-package-by-default t))
 
-  ;; straigt.el all below
-  ;; (setq package-user-dir (expand-file-name "~/.emacs.d/lisp/vendor"))
 
-  ;; (setq package-archives
-  ;;       '(("melpa"        . "http://melpa.org/packages/")
-  ;;         ("gnu"          . "http://elpa.gnu.org/packages/")
-  ;;         ("org"          . "http://orgmode.org/elpa/")))
+    ;; straight.el (require 'package)
 
-  ;; (package-initialize)
+    (add-to-list 'load-path "~/.emacs.d/straight/build")
 
-  ;; (when (not package-archive-contents)
-  ;;   (package-refresh-contents))
+    ;; straigt.el all below
+    ;; (setq package-user-dir (expand-file-name "~/.emacs.d/lisp/vendor"))
+
+    ;; (setq package-archives
+    ;;       '(("melpa"        . "http://melpa.org/packages/")
+    ;;         ("gnu"          . "http://elpa.gnu.org/packages/")
+    ;;         ("org"          . "http://orgmode.org/elpa/")))
+
+    ;; (package-initialize)
+
+    ;; (when (not package-archive-contents)
+    ;;   (package-refresh-contents))
 
 #+end_src
 
 *** Install and configure =use-package=
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
 
-;; Configure `use-package' prior to loading it.
-(eval-and-compile
-  (setq use-package-always-ensure nil)
-  (setq use-package-always-defer nil)
-  (setq use-package-always-demand nil)
-  (setq use-package-expand-minimally nil)
-  (setq use-package-enable-imenu-support t)
-  (setq use-package-compute-statistics nil)
-  ;; The following is VERY IMPORTANT.  Write hooks using their real name
-  ;; instead of a shorter version: after-init ==> `after-init-hook'.
-  ;;
-  ;; This is to empower help commands with their contextual awareness,
-  ;; such as `describe-symbol'.
-  (setq use-package-hook-name-suffix nil))
+  ; (straight-use-package 'use-package)
+  ;(unless (package-installed-p 'use-package)
+  ;  (package-refresh-contents)
+  ;  (package-install 'use-package))
+
+  ;; Configure `use-package' prior to loading it.
+  (eval-and-compile
+    (setq use-package-always-ensure nil)
+    (setq use-package-always-defer nil)
+    (setq use-package-always-demand nil)
+    (setq use-package-expand-minimally nil)
+    (setq use-package-enable-imenu-support t)
+    (setq use-package-compute-statistics nil)
+    ;; The following is VERY IMPORTANT.  Write hooks using their real name
+    ;; instead of a shorter version: after-init ==> `after-init-hook'.
+    ;;
+    ;; This is to empower help commands with their contextual awareness,
+    ;; such as `describe-symbol'.
+    (setq use-package-hook-name-suffix nil))
 #+end_src
 
 * Appearance & UI
@@ -423,6 +432,11 @@ Customize Tab Bar face
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package doom-modeline
   :config (doom-modeline-mode))
+#+end_src
+
+=doom-modeline= requires =nerd-fonts=
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (straight-use-package '(nerd-fonts :type git :host github :repo "twlz0ne/nerd-fonts.el"))
 #+end_src
 
 * Custom Utility Functions
@@ -587,22 +601,24 @@ Install =buffer-move= for arranging buffers
   (use-package buffer-move)
 #+end_src
 
-* vTerm
-- vTerm
-- vterm-toggle: [[https://github.com/jixiuf/vterm-toggle]]
-- multi-vterm: https://github.com/suonlight/multi-vterm
+* Magit
+Pull =magit= and launch it with ~C-x g~
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (use-package vterm
-    :hook (after-init . vterm-mode))
+  (use-package magit)
 
-  (use-package vterm-toggle
-    :bind (("<f9>" . 'vterm-toggle)
-           ("C-<f9>" . 'vterm-toggle-cd)
-           :map vterm-mode-map
-           ("<f9>" . 'vterm-toggle)
-           ([(control return)] . #'vterm-toggle-insert-cd)))
+  ;; Don't ask me to save unsaved buffers on every action
+  (setq magit-save-repository-buffers nil)
+#+end_src
 
-  (use-package multi-vterm)
+#+begin_src emacs-lisp :tangle lisp/keybindings.el
+  (global-set-key (kbd "C-x g") 'magit-status)
+#+end_src
+
+
+** ediff
+#+begin_src emacs-lisp :tangle lisp/common.el
+  (custom-set-variables
+   '(ediff-split-window-function (quote split-window-horizontally)))
 #+end_src
 
 
@@ -669,7 +685,7 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
      :commands lsp)
 
    ;; optionally
-   (use-package lsp-ui :commands lsp-ui-mode)
+  (use-package lsp-ui :commands lsp-ui-mode)
   (use-package company)
   (use-package json-mode)
 
@@ -678,7 +694,7 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
    ;; if you are ivy user
    (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
    (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
-
+   (use-package yasnippet)
    ;; optionally if you want to use debugger
    (use-package dap-mode)
    ;; (use-package dap-LANGUAGE) to load the dap adapter for your language
@@ -1462,27 +1478,50 @@ macOS swallows certain keybindings in terminal mode. Redfining the most importan
 (global-set-key (kbd "C-c y") 'org-insert-structure-template)
 #+end_src
 
-* Magit
-Pull =magit= and launch it with ~C-x g~
+
+** Org JIRA
+Install
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package org-jira)
+#+end_src
+
+Set the Org JIRA base URL and authenticate
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (use-package magit)
+  ;; Uncomment next two lines to debug connection issues w/ JIRA
+  ;; (setq request-log-level 'blather)
+  ;; (setq request-message-level 'blather)
 
-  ;; Don't ask me to save unsaved buffers on every action
-  (setq magit-save-repository-buffers nil)
+  (setq jiralib-url "https://nimblejira.nimblestorage.com")
 
-  (global-set-key (kbd "C-x g") 'magit-status)
+  ;; pull token from .authinfo
+  (setq jiralib-token
+        (cons "Authorization"
+              (concat "Bearer " (auth-source-pick-first-password
+                  :host "nimblejira.nimblestorage.com"))))
 #+end_src
 
-** ediff
-#+begin_src emacs-lisp :tangle lisp/common.el
-  (custom-set-variables
-   '(ediff-split-window-function (quote split-window-horizontally)))
+Custom JIRA Queries
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+    (setq org-jira-custom-jqls
+      '(
+        (:jql " assignee = currentUser() AND (status = \"To Do\" OR status = \"In Progress\") order by updated DESC "
+              :limit 100
+              :filename "my-open-issues")))
 #+end_src
+
+Define how tickets progress
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  ;(defconst org-jira-progress-issue-flow
+  ;'(("To Do" . "In Progress"
+  ;  ("In Progress" . "Done"))))
+#+end_src
+
 * Custom Interface Interactions
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (defun rh-reload-emacs-init ()
     (interactive)
     (load-file "~/.emacs.d/init.el"))
+
   ;; (unless (package-installed-p 'goto-last-change)
   ;;   (package-install 'goto-last-change))
 
@@ -1490,6 +1529,27 @@ Pull =magit= and launch it with ~C-x g~
   ;;   ;; :straight t
   ;;   :bind ("C-z" . goto-last-change))
 #+end_src
+
+
+* vTerm
+- vTerm
+- vterm-toggle: [[https://github.com/jixiuf/vterm-toggle]]
+- multi-vterm: https://github.com/suonlight/multi-vterm
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package vterm
+    :hook (after-init . vterm-mode))
+
+  (use-package vterm-toggle)
+  (use-package multi-vterm)
+#+end_src
+
+#+begin_src emacs-lisp :tangle lisp/keybindings.el
+  (global-set-key (kbd "<f9>") 'vterm-toggle)
+  (global-set-key (kbd "C-<f9>") 'vterm-toggle-cd)
+  (define-key vterm-mode-map (kbd "<f9>") 'vterm-toggle)
+  (define-key vterm-mode-map (kbd "C-RET") #'vterm-toggle-insert-cd)
+#+end_src
+
 
 * Bootstrap
 We create a bootstrap file to load all the lisp files that were generated by the code blocks above
@@ -1500,6 +1560,7 @@ We create a bootstrap file to load all the lisp files that were generated by the
 
 #+begin_src emacs-lisp :tangle emacs.el
   (add-to-list 'load-path "~/.emacs.d/lisp")
+  (load-library "early-init")
   (load-library "common")
   (load-library "packages")
   (load-library "hooks")
