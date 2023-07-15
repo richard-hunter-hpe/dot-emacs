@@ -12,24 +12,61 @@
 
 * Early Init
 #+begin_src emacs-lisp :tangle lisp/early-init.el
-  (setq package-enable-at-startup nil)
+    (setq package-enable-at-startup nil)
 
-  ;; ;; bootstrap straight.el
-  ;; (defvar bootstrap-version)
-  ;;     (let ((bootstrap-file
-  ;;            (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-  ;;           (bootstrap-version 6))
-  ;;       (unless (file-exists-p bootstrap-file)
-  ;;         (with-current-buffer
-  ;;             (url-retrieve-synchronously
-  ;;              "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-  ;;              'silent 'inhibit-cookies)
-  ;;           (goto-char (point-max))
-  ;;           (eval-print-last-sexp)))
-  ;;       (load bootstrap-file nil 'nomessage))
+    (setq inhibit-startup-message t
+          use-file-dialog nil
+          frame-resize-pixelwise t
+          frame-inhibit-implied-resize t
+          use-dialog-box t ; only for mouse events, which I seldom use
+          inhibit-startup-buffer-menu t
+          inhibit-splash-screen t)
 
-  ;; ;; set use-package to use straight.el
-  ;; (setq straight-use-package-by-default t)
+  ;; I do not use those graphical elements by default, but I do enable
+  ;; them from time-to-time for testing purposes or to demonstrate
+  ;; something.
+  (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
+  (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
+  (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
+    (defun rh-emacs-re-enable-frame-theme (_frame)
+      "Re-enable active theme, if any, upon FRAME creation.
+      Add this to `after-make-frame-functions' so that new frames do
+      not retain the generic background set by the function
+      `rh-emacs-avoid-initial-flash-of-light'."
+      (when-let ((theme (car custom-enabled-themes)))
+        (enable-theme theme)))
+
+    ;; NOTE 2023-02-05: The reason the following works is because (i) the
+    ;; `mode-line-format' is specified again and (ii) the
+    ;; `prot-emacs-theme-gsettings-dark-p' will load a dark theme.
+    (defun rh-emacs-avoid-initial-flash-of-light ()
+      "Avoid flash of light when starting Emacs, if needed.
+        New frames are instructed to call `prot-emacs-re-enable-frame-theme'."
+          (setq mode-line-format nil)
+          (set-face-attribute 'default nil :background "#000000" :foreground "#ffffff")
+          (set-face-attribute 'mode-line nil :background "#000000" :foreground "#ffffff" :box 'unspecified)
+          (add-hook 'after-make-frame-functions #'rh-emacs-re-enable-frame-theme))
+
+    (rh-emacs-avoid-initial-flash-of-light)
+
+    ;; (add-hook 'after-init-hook (lambda () (set-frame-name "home")))
+
+    ;; ;; bootstrap straight.el
+    ;; (defvar bootstrap-version)
+    ;;     (let ((bootstrap-file
+    ;;            (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+    ;;           (bootstrap-version 6))
+    ;;       (unless (file-exists-p bootstrap-file)
+    ;;         (with-current-buffer
+    ;;             (url-retrieve-synchronously
+        ;;              "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+    ;;              'silent 'inhibit-cookies)
+    ;;           (goto-char (point-max))
+    ;;           (eval-print-last-sexp)))
+    ;;       (load bootstrap-file nil 'nomessage))
+
+    ;; ;; set use-package to use straight.el
+    ;; (setq straight-use-package-by-default t)
 #+end_src
 
 * Startup Config
@@ -40,26 +77,24 @@
 #+begin_src emacs-lisp :tangle lisp/common.el
   (setq package-enable-at-startup nil)
   (setq frame-inhibit-implied-resize t)
-  (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
-  (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
-  (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
+
   ;; (if (fboundp 'fringe-mode) (set-fringe-mode 0))
   (if (display-graphic-p)
       (progn
         (setq initial-frame-alist
               '(
                 (tool-bar-lines . 0)
-                (width . 200) ; chars
+                (width . 180) ; chars
                 (height . 80) ; lines
-                (left . 30)
+                (left . 0)
                 (vertical-scroll-bars . nil)
                 (horizontal-scroll-bars . nil)
                 (top . 20)))
         (setq default-frame-alist
               '(
-                (width . 200)
+                (width . 180)
                 (height . 80)
-                (left . 60)
+                (left . 0)
                 (top . 20)
                 (vertical-scroll-bars . nil)
                 (horizontal-scroll-bars . nil)
@@ -67,6 +102,53 @@
     (progn
       (setq initial-frame-alist '( (tool-bar-lines . 0)))
       (setq default-frame-alist '( (tool-bar-lines . 0)))))
+#+end_src
+
+** Macros
+#+begin_src emacs-lisp :tangle lisp/common.el
+
+  ;; Taken from Prot
+  (defmacro rh-emacs-keybind (keymap &rest definitions)
+    "Expand key binding DEFINITIONS for the given KEYMAP.
+  DEFINITIONS is a sequence of string and command pairs."
+    (declare (indent 1))
+    (unless (zerop (% (length definitions) 2))
+      (error "Uneven number of key+command pairs"))
+    (let ((keys (seq-filter #'stringp definitions))
+          ;; We do accept nil as a definition: it unsets the given key.
+          (commands (seq-remove #'stringp definitions)))
+      `(when-let (((keymapp ,keymap))
+                  (map ,keymap))
+         ,@(mapcar
+            (lambda (pair)
+              (unless (and (null (car pair))
+                           (null (cdr pair)))
+                `(define-key map (kbd ,(car pair)) ,(cdr pair))))
+            (cl-mapcar #'cons keys commands)))))
+
+  ;; Sample of `rh-emacs-keybind'
+
+  ;; (rh-emacs-keybind global-map
+  ;;   "C-z" nil
+  ;;   "C-x b" #'switch-to-buffer
+  ;;   "C-x C-c" nil
+  ;;   "C-x k" #'kill-buffer)
+
+#+end_src
+
+** Repeat mode
+#+begin_src emacs-lisp :tangle lisp/common.el
+  ;;; Repeatable key chords (repeat-mode)
+  (setq repeat-on-final-keystroke t
+        repeat-exit-timeout 5
+        repeat-exit-key "<escape>"
+        repeat-keep-prefix nil
+        repeat-check-key t
+        repeat-echo-function 'ignore
+        ;; Technically, this is not in repeal.el, though it is the
+        ;; same idea.
+        set-mark-command-repeat-pop t)
+  (repeat-mode 1)
 #+end_src
 
 ** GUI Emacs add env path for gui
@@ -105,16 +187,19 @@ Activate some internal features
 - which-function-mode:: display current function name in the mode line (TODO: disabled for causing errors)
 
 #+begin_src emacs-lisp :tangle lisp/common.el
-    (auto-compression-mode 1)
-    (column-number-mode 1)
-    (global-auto-revert-mode 1)
-    (global-font-lock-mode 1)
-    (global-hl-line-mode 1)
-    ;; Lately I've come to dislike line numbers unless pair programming, so leave off
-    ;; (global-display-line-numbers-mode 1)
-    (show-paren-mode 1)
-    (transient-mark-mode 1)
-    ;; (which-function-mode 1)
+  (auto-compression-mode 1)
+  (column-number-mode 1)
+  (setq auto-revert-verbose t)
+  (global-auto-revert-mode 1)
+  (global-font-lock-mode 1)
+  (global-hl-line-mode 1)
+  ;; Lately I've come to dislike line numbers unless pair programming, so leave off
+  ;; (global-display-line-numbers-mode 1)
+  (show-paren-mode 1)
+  (transient-mark-mode 1)
+  ;; (which-function-mode 1)
+  ;;;; Delete selection
+  (delete-selection-mode 1)
 #+end_src
 
 No need to backup. Let's be brave.
@@ -149,12 +234,11 @@ Warn when opening files over 150MB
   (setq-default large-file-warning-threshold 150000000)
 #+end_src
 
-Startup message and scratch buffer setup
+Startup message setup
 
 #+begin_src emacs-lisp :tangle lisp/common.el
-(setq initial-scratch-message (format ";; Scratch buffer - started on %s\n\n" (current-time-string))
-      inhibit-startup-message t
-      inhibit-splash-screen t)
+(setq initial-scratch-message (format ";; Scratch buffer - started on %s\n\n" (current-time-string)))
+
 #+end_src
 
 Uniquify the buffer's name
@@ -197,6 +281,16 @@ Open file system read-only files as read-only in Emacs as well
 #+begin_src emacs-lisp :tangle lisp/common.el
   (setq view-read-only t)
 #+end_src
+
+
+** Proced
+#+begin_src emacs-lisp :tangle lisp/common.el
+  ;;;; `proced' (process monitor, similar to `top')
+  (setq proced-enable-color-flag t) ; Emacs 29
+  (setq proced-descend t)
+  (setq proced-filter 'user)
+#+end_src
+
 
 ** UX Customizations
 #+begin_src emacs-lisp :tangle lisp/common.el
@@ -521,47 +615,55 @@ Here we add custom utility functions
 - TODO: it would be nice to reorganize key bindings so they are assigned along with the packages they work on. More research neeeded on on method for this.
 
 #+begin_src emacs-lisp :tangle lisp/keybindings.el
-  ;; [Ctrl+c -> l -- Org store link]
-  ;; [Ctrl+c -> a -- Org open agenda]
-  (define-key global-map "\C-cl" 'org-store-link)
-  (define-key global-map "\C-ca" 'org-agenda)
-    (global-set-key "\C-cc" 'org-capture)
-  (global-set-key "\C-cb" 'org-switchb)
-  (setq org-log-done t)
+    ;; [Ctrl+c -> l -- Org store link]
+    ;; [Ctrl+c -> a -- Org open agenda]
+    (define-key global-map "\C-cl" 'org-store-link)
+    (define-key global-map "\C-ca" 'org-agenda)
+      (global-set-key "\C-cc" 'org-capture)
+    (global-set-key "\C-cb" 'org-switchb)
+    (setq org-log-done t)
 
-  (global-set-key (kbd "C-c i") 'func/open-package-installer)
+    (global-set-key (kbd "C-c i") 'func/open-package-installer)
 
-  ;; [Ctrl+c -> TAB] -- Mark the entire file
-  ;; Hint: Useful for auto-formatting the entire file by pressing (Ctrl+c -> TAB -> TAB)
-  (global-set-key (kbd "C-c TAB") 'mark-whole-buffer)
+    ;; [Ctrl+c -> TAB] -- Mark the entire file
+    ;; Hint: Useful for auto-formatting the entire file by pressing (Ctrl+c -> TAB -> TAB)
+    (global-set-key (kbd "C-c TAB") 'mark-whole-buffer)
 
-  ;; [Ctrl+x -> Ctrl+b -- Open iBuffer instead of buffers]
-  (global-set-key (kbd "C-x C-b")  'ibuffer)
+    ;; [Ctrl+x -> Ctrl+b -- Open iBuffer instead of buffers]
+    (global-set-key (kbd "C-x C-b")  'ibuffer)
 
-  ;; By default, killing a word backward will put it in the ring, I don't want this
-  (defun backward-kill-word-noring (arg)
-    (interactive "p")
-    (let ((kr kill-ring))
-      (backward-kill-word arg)
-      (setq kill-ring (reverse kr))))
+    ;; By default, killing a word backward will put it in the ring, I don't want this
+    (defun backward-kill-word-noring (arg)
+      (interactive "p")
+      (let ((kr kill-ring))
+        (backward-kill-word arg)
+        (setq kill-ring (reverse kr))))
 
-  (global-set-key (kbd "C-M-<backspace>") 'backward-kill-word-noring)
+    (global-set-key (kbd "C-M-<backspace>") 'backward-kill-word-noring)
 
-  ;; Special keys
-  (customize-set-variable mac-right-option-modifier nil)
-  (customize-set-variable mac-command-modifier 'super)
-  (customize-set-variable ns-function-modifier 'hyper)
+    ;; Special keys
+    (customize-set-variable mac-right-option-modifier nil)
+    (customize-set-variable mac-command-modifier 'super)
+    (customize-set-variable ns-function-modifier 'hyper)
 
-  ;; Keybinds
+  (rh-emacs-keybind global-map
+     "C-c C-z" nil
+      "C-h h" nil
+      "M-`" nil
+      "M-z" #'zap-up-to-char ; NOT `zap-to-char'
+      "C-h K" #'describe-keymap ; overrides `Info-goto-emacs-key-command-node'
+      "M-o" #'delete-blank-lines   ; alias for C-x C-o
+      "C-x k" #'kill-buffer)
 
-  (global-set-key (kbd "s-W") 'delete-frame) ; ⌘-W = Close window
-  (global-set-key (kbd "s-}") 'tab-bar-switch-to-next-tab) ; ⌘-} = Next tab
-  (global-set-key (kbd "s-{") 'tab-bar-switch-to-prev-tab) ; ⌘-{ = Previous tab
-  (global-set-key (kbd "s-t") 'tab-bar-new-tab) ;⌘-t = New tab
-  (global-set-key (kbd "s-w") 'tab-bar-close-tab) ; ⌘-w = Close tab
+    ;; Keybinds
+    (global-set-key (kbd "s-W") 'delete-frame) ; ⌘-W = Close window
+    (global-set-key (kbd "s-}") 'tab-bar-switch-to-next-tab) ; ⌘-} = Next tab
+    (global-set-key (kbd "s-{") 'tab-bar-switch-to-prev-tab) ; ⌘-{ = Previous tab
+    (global-set-key (kbd "s-t") 'tab-bar-new-tab) ;⌘-t = New tab
+    (global-set-key (kbd "s-w") 'tab-bar-close-tab) ; ⌘-w = Close tab
 
-  (unless (< emacs-major-version 28)
-    (global-set-key (kbd "s-Z") 'undo-redo)) ; ⌘-Z = Redo
+    (unless (< emacs-major-version 28)
+      (global-set-key (kbd "s-Z") 'undo-redo)) ; ⌘-Z = Redo
 #+end_src
 
 * Completions
@@ -1571,3 +1673,4 @@ We create a bootstrap file to load all the lisp files that were generated by the
 #+begin_quote
 All we can do is try.
 #+end_quote
+
