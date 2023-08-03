@@ -4,6 +4,9 @@ SRC_DIR := $(shell pwd)
 # Source file
 SRC_FILE := $(SRC_DIR)/emacs.org
 
+# Early Init Source file
+EI_SRC_FILE := $(SRC_DIR)/early-init.org
+
 # Early init file
 EARLY_INIT_FILE := $(SRC_DIR)/early-init.el
 
@@ -15,6 +18,9 @@ DEST_DIR := $(SRC_DIR)/lisp
 
 # EMACS_BINARY should point to your installation of GNU emacs
 EMACS_BINARY := /Users/hunterri/git/emacs/src/emacs
+
+EARLY_INIT = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"early-init.org\")")
+
 
 # The following will compile emacs.org to emacs.el
 EMACS = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"emacs.org\")")
@@ -31,8 +37,11 @@ all: build
 setup-dest-dir:
 	mkdir -p $(DEST_DIR)
 
+build-early-init: setup-dest-dir
+	$(EARLY_INIT)
+
 ## build: Generate and compile lisp
-build: setup-dest-dir |
+build: build-early-init |
 	$(EMACS) 
 
 ## test: Test init file
@@ -55,6 +64,7 @@ clean:
 
 ## install: Move files to .emacs.d
 install:
+	cp $(EI_SRC_FILE) $(HOME)/.emacs.d
 	cp $(SRC_FILE) $(HOME)/.emacs.d
 	cp $(SRC_DIR)/Makefile $(HOME)/.emacs.d
 	cd $(HOME)/.emacs.d && make build
