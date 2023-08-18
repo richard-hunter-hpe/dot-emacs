@@ -996,8 +996,11 @@ Opt in line numbers on these modes regardless of global setting
 #+end_src
 
 ** Python
-#+begin_src emacs-lisp :tangle lisp/hooks.el
-
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package lsp-pyright
+    :hook (python-mode . (lambda ()
+                            (require 'lsp-pyright)
+                            (lsp-deferred))))
 #+end_src
 
 ** Flycheck
