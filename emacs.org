@@ -172,12 +172,14 @@ Set PATH for GUI emacs
   (setq exec-path (append exec-path '("/usr/local/bin")))
   (setq exec-path (append exec-path '("/opt/homebrew/bin")))
   (setq exec-path (append exec-path '("/opt/homebrew/sbin")))
+  (setq exec-path (append exec-path '("/Users/hunterri/go/bin")))
   (setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v16.16.0/bin")))
-  ;; (setq exec-path (append exec-path '("/Users/hunterri/git/richard-hunter/dscc-authz-client")))
+
 
   (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
   (setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/bin"))
   (setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/sbin"))
+  (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/go/bin"))
   (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v16.16.0/bin"))
 
 #+end_src
@@ -474,13 +476,13 @@ Don't show the buttons on tabs
 #+end_src
 
 Customize Tab Bar face
-#+begin_src emacs-lisp :tangle lisp/common.el
+#+begin_src emacs-lisp :tangle lisp/hooks.el
   (set-face-attribute 'tab-bar-tab nil :overline "dark cyan" :box nil)
 #+end_src
 
 
 ** Modeline
-- TODO: customize modeline, see below (however, liking =doom-modline=)
+- TODO: customize modeline, see below (however, liking =doom-modeline=)
 - [[https://occasionallycogent.com/custom_emacs_modeline/index.html][Customizing Modeline]]
 
   =doom-modeline= is a very sensible default modeline, so sticking with it for a while
@@ -639,7 +641,7 @@ Install and configure =orderless= a completetions framework helper. I use it in 
 #+begin_src emacs-lisp :tangle lisp/packages.el
     (use-package helm)
 #+end_src
-    
+
 * Magit
 Set up =magit= and launch it with ~C-x g~
 #+begin_src emacs-lisp :tangle lisp/packages.el
@@ -659,6 +661,20 @@ Set up =magit= and launch it with ~C-x g~
    '(ediff-split-window-function (quote split-window-horizontally)))
 #+end_src
 
+
+* Multiple Cursors
+
+#+begin_src emacs-lisp :tangle lisp/packages.el
+
+  (use-package multiple-cursors
+    :bind (("H-SPC" . set-rectangular-region-anchor)
+           ("C-M-SPC" . set-rectangular-region-anchor)
+           ("C->" . mc/mark-next-like-this)
+           ("C-<" . mc/mark-previous-like-this)
+           ("C-c C->" . mc/mark-all-like-this)
+           ("C-c C-SPC" . mc/edit-lines)))
+
+#+end_src
 
 * Dired
 ** Configuration
@@ -734,14 +750,10 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
     :hook ((lsp-mode . setup-lsp-mode)))
 
   (use-package lsp-ui :commands lsp-ui-mode)
-
   (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
-
   (use-package helm-lsp :commands helm-lsp-workspace-symbol)
   (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
-  (use-package which-key
-    :config
-    (which-key-mode))
+  (use-package which-key :config (which-key-mode))
 
 #+end_src
 
@@ -755,8 +767,9 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 *** LSP UI
 [[https://github.com/emacs-lsp/lsp-ui][github]]
 
-#+begin_src emacs-lisp :tangle lisp/hooks.el
-;; TODO
+#+begin_src emacs-lisp :tangle lisp/modes.el
+  ;; hide lsp ui code actions
+  (setq lsp-ui-sideline-show-code-actions nil)
 #+end_src
 
 
@@ -857,10 +870,24 @@ Opt in line numbers on these modes regardless of global setting
   (use-package prettier-js)
 #+end_src
 
+** CSS
+
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+
+  (defun setup-css-mode ()
+    (interactive)
+    (lsp)
+    (company-mode)
+    (company-css))
+
+  (add-hook 'css-mode-hook #'setup-css-mode)
+
+#+end_src
+
 ** JavaScript
 
 #+begin_src emacs-lisp :tangle lisp/modes.el
-  
+
   ;; Make it so all '.js' files auto load 'js-mode'
   (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
 
@@ -879,17 +906,23 @@ Opt in line numbers on these modes regardless of global setting
 #+end_src
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  
+
     (defun setup-js-ts-mode ()
+      (message "Setting up js/ts mode")
       (interactive)
       (lsp)
-      (setq flycheck-check-syntax-automatically '(save mode-enabled))
       (add-node-modules-path)
+      ;; run flycheck on save and on opening a new line
+      (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
       (prettier-js-mode)
       (smartparens-mode)
+      (eldoc-mode +1)
       (setq lsp-disagnostics-provider :none)
-      (flycheck-select-checker 'javascript-eslint)
-      (flycheck-add-next-checker 'javascript-eslint 'lsp)
+      ;; prefer eslint over all checkers if it can be enabled, do it
+      (message "using eslint if available")
+      ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
+        (flycheck-select-checker 'javascript-eslint))))
+      ;;(flycheck-add-next-checker 'javascript-eslint 'lsp)
   )
 
     (add-hook 'js-mode-hook #'setup-js-ts-mode)
@@ -919,6 +952,48 @@ Opt in line numbers on these modes regardless of global setting
 
 #+end_src
 
+** Go
+
+#+begin_src emacs-lisp :tangle lisp/packages.el
+
+  (use-package go-mode)
+  
+#+end_src
+
+
+
+#+begin_src emacs-lisp :tangle lisp/modes.el
+
+  (add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode))
+ 
+#+end_src
+
+
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+
+  (defun setup-go-mode ()
+    (message "Setting up go mode")
+    (interactive)
+    (lsp-deferred)
+    (eldoc-mode +1)
+    ;; set tab-width to 4 spaces
+    ((lambda () (setq tab-width 4)))
+    ((lambda () (flycheck-select-checker 'go-gofmt)))
+    (setq lsp-disagnostics-provider :none))
+
+
+  (add-hook 'go-mode-hook #'setup-go-mode)
+
+
+  ;; Set up before-save hooks to format buffer and add/delete imports.
+  ;; Make sure you don't have other gofmt/goimports hooks enabled.
+  (defun lsp-go-install-save-hooks ()
+    (add-hook 'before-save-hook #'lsp-format-buffer t t)
+    (add-hook 'before-save-hook #'lsp-organize-imports t t))
+
+  (add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
+
+#+end_src
 
 ** Python
 #+begin_src emacs-lisp :tangle lisp/hooks.el
@@ -930,7 +1005,13 @@ Opt in line numbers on these modes regardless of global setting
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package flycheck
-    :init (global-flycheck-mode))
+  :init (global-flycheck-mode)
+  :config (setq-default flycheck-disabled-checkers '(lsp)))
+#+end_src
+
+** JSON
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package json-mode)
 #+end_src
 
 ** YAML
@@ -1317,7 +1398,7 @@ Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beaut
     ;;   (org-bullets-bullet-list '("⁖" "◉" "○" "✸" "✿")))
 
   (use-package org-modern)
-  
+
   (with-eval-after-load 'org (global-org-modern-mode))
 #+end_src
 
@@ -1438,6 +1519,7 @@ We create a bootstrap file to load all the lisp files that were generated by the
   (load-library "early-init")
   (load-library "common")
   (load-library "packages")
+  (load-library "modes")
   (load-library "hooks")
   (load-library "keybindings")
 #+end_src
