@@ -1,3 +1,4 @@
+
 #+begin_src emacs-lisp :tangle lisp/common.el
   ;; supress debugger by default
   ;; (setq debug-on-error t)
@@ -6,9 +7,9 @@
 #+end_src
 
 * Quick Links
-- [[*Org Mode][Org Mode]]
-- [[*JavaScript][JavaScript]]
-
+- [[Org Mode][Org Mode]]
+- [[JavaScript][JavaScript]]
+ 
 * Early Init
 - hide certain elements if in GUI emacs including scroll bar, tool bar
 - disable package.el
@@ -362,7 +363,6 @@ Open file system read-only files as read-only in Emacs as well
 
 #+end_src
 
-
 * Appearance & UI
 ** Mouse & Scroll Preferences
 Enable smooth scroll and scroll window under mouse
@@ -467,6 +467,17 @@ I like =doom-themes= also...
     :config (load-theme 'doom-xcode t)
   )
 #+end_src
+
+Humanoid themes
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package humanoid-themes)
+#+end_src
+
+EF Themes
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package ef-themes)
+#+end_src
+
 
 ** Tab Bar
 Don't show the buttons on tabs
@@ -629,12 +640,12 @@ Here we add custom utility functions
 #+end_src
 
 * Completions
-** Orderless
+** Orderless & Helm
 Install and configure =orderless= a completetions framework helper. I use it in tandem with the built-in =icomplete=.
 #+begin_src emacs-lisp :tangle lisp/packages.el
- ; (use-package orderless
- ;   :init (icomplete-mode) ; optional but recommended!
- ;   :custom (completion-styles '(orderless)))
+  (use-package orderless
+    :init (icomplete-mode) ; optional but recommended!
+    :custom (completion-styles '(orderless)))
     #+end_src
 
 
@@ -661,11 +672,8 @@ Set up =magit= and launch it with ~C-x g~
    '(ediff-split-window-function (quote split-window-horizontally)))
 #+end_src
 
-
 * Multiple Cursors
-
 #+begin_src emacs-lisp :tangle lisp/packages.el
-
   (use-package multiple-cursors
     :bind (("H-SPC" . set-rectangular-region-anchor)
            ("C-M-SPC" . set-rectangular-region-anchor)
@@ -673,7 +681,6 @@ Set up =magit= and launch it with ~C-x g~
            ("C-<" . mc/mark-previous-like-this)
            ("C-c C->" . mc/mark-all-like-this)
            ("C-c C-SPC" . mc/edit-lines)))
-
 #+end_src
 
 * Dired
@@ -691,6 +698,7 @@ Setup =dired= the way I like it.
     :hook ((dired-mode-hook . dired-hide-details-mode)
            (dired-mode-hook . (lambda() (display-line-numbers-mode -1)))
            (dired-mode-hook . hl-line-mode)))
+;;           (dired-mode-hook . treemacs-icons-dired))
 #+end_src
 
 Also auto refresh dired, but be quiet about it
@@ -714,7 +722,6 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
          (mapc 'find-file fn-list)))))
 #+end_src
 
-
 * Debugging: ~dap-mode~
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   ;; (use-package dap-mode
@@ -723,11 +730,25 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
   ;;   :config
   ;;   )
   #+end_src
+* Treemacs Add Ons
+#+begin_src emacs-lisp :tangle lisp/packages.el
+    (use-package treemacs-icons-dired)
+#+end_src
 
-
-
+* Projectile
+#+begin_src emacs-lisp :tangle lisp/packages.el
+(use-package projectile
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :init
+  (when (file-directory-p "~/git")
+    (setq projectile-project-search-path '("~/git")))
+  (setq projectile-switch-project-action #'projectile-dired))
+#+end_src
 * LSP & Company
-
 ** Company
 #+begin_src emacs-lisp :tangle lisp/packages.el
 
@@ -743,11 +764,31 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
   (defun setup-lsp-mode ()
     (message "setting up lsp mode..."))
 
+  (defun setup-flycheck ()
+    (message "setting up flycheck mode...")
+    (lsp-diagnostics-flycheck-enable)
+    (flycheck-mode)
+    (setq-default flycheck-disabled-checkers '(lsp))
+    (flycheck-add-next-checker 'javascript-eslint 'lsp)
+    ;; run flycheck on save and on opening a new line
+    (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
+     ;; prefer eslint over all checkers if it can be enabled, do it
+    (flycheck-select-checker 'javascript-eslint)
+    (message "using eslint if available")
+    ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
+                    (message "eslint IS available, attempting to set checker")
+                  (flycheck-select-checker 'javascript-eslint)))))
+
+
 
   (use-package lsp-mode
     :commands lsp
-    :custom (lsp-enable-snippet nil)
-    :hook ((lsp-mode . setup-lsp-mode)))
+
+    :custom
+    (lsp-enable-snippet nil)
+    (lsp-enable-flycheck nil)
+    :hook ((lsp-mode-hook . setup-lsp-mode)
+           (lsp-after-initialize-hook . setup-flycheck)))
 
   (use-package lsp-ui :commands lsp-ui-mode)
   (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
@@ -769,9 +810,8 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 
 #+begin_src emacs-lisp :tangle lisp/modes.el
   ;; hide lsp ui code actions
-  (setq lsp-ui-sideline-show-code-actions nil)
+  ;; (setq lsp-ui-sideline-show-code-actions nil)
 #+end_src
-
 
 * Additional Hooks
 ** Prog Mode
@@ -876,7 +916,7 @@ Opt in line numbers on these modes regardless of global setting
 
   (defun setup-css-mode ()
     (interactive)
-    (lsp)
+    ;;(lsp)
     (company-mode)
     (company-css))
 
@@ -888,8 +928,9 @@ Opt in line numbers on these modes regardless of global setting
 
 #+begin_src emacs-lisp :tangle lisp/modes.el
 
+  ;; js files auto open in js-mode already... this was causing json files to fire js-mode hooks
   ;; Make it so all '.js' files auto load 'js-mode'
-  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
+  ;;(add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
 
   ;; Make it so all '.jsx' files auto load 'js-jsx-mode'
   (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-jsx-mode))
@@ -902,32 +943,42 @@ Opt in line numbers on these modes regardless of global setting
 
   ;; Indent switch statements normally
   (setq js2-indent-switch-body t)
-
 #+end_src
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
 
-    (defun setup-js-ts-mode ()
-      (message "Setting up js/ts mode")
-      (interactive)
-      (lsp)
-      (add-node-modules-path)
-      ;; run flycheck on save and on opening a new line
-      (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
-      (prettier-js-mode)
-      (smartparens-mode)
-      (eldoc-mode +1)
-      (setq lsp-disagnostics-provider :none)
-      ;; prefer eslint over all checkers if it can be enabled, do it
-      (message "using eslint if available")
-      ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
-        (flycheck-select-checker 'javascript-eslint))))
-      ;;(flycheck-add-next-checker 'javascript-eslint 'lsp)
-  )
+          (defun setup-js-ts-mode ()
+            (message "Setting up js/ts mode")
+            (interactive)
+            (lsp)
+            (require 'lsp-diagnostics)
+      
+            (add-node-modules-path)
+            (prettier-js-mode)
+            (smartparens-mode)
+            (eldoc-mode +1)
+            (setq lsp-disagnostics-provider :none)
+            (setup-flycheck)
+          ;  (lsp-diagnostics-flycheck-enable)
+          ;  (flycheck-mode)
+          ;  ;; run flycheck on save and on opening a new line
+          ;  (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
+          ;  (setq-default flycheck-disabled-checkers '(lsp))
+          ;  (flycheck-add-next-checker 'javascript-eslint 'lsp)
+          ;  ;; prefer eslint over all checkers if it can be enabled, do it
+          ;  (message "using eslint if available")
+          ;  (flycheck-select-checker 'javascript-eslint)
 
-    (add-hook 'js-mode-hook #'setup-js-ts-mode)
-    (add-hook 'typescript-mode-hook #'setup-js-ts-mode)
+  ;          ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
+   ;                         (message "eslint IS available, attempting to set checker")
+    ;                      (flycheck-select-checker 'javascript-eslint)))
+     ;        )
+            ;;(flycheck-add-next-checker 'javascript-eslint 'lsp)
+        )
 
+        (add-hook 'js-mode-hook #'setup-js-ts-mode)
+        (add-hook 'js-jsx-mode-hook #'setup-js-ts-mode)
+        (add-hook 'typescript-mode-hook #'setup-js-ts-mode)
 #+end_src
 
 ** TypeScript
@@ -974,7 +1025,7 @@ Opt in line numbers on these modes regardless of global setting
   (defun setup-go-mode ()
     (message "Setting up go mode")
     (interactive)
-    (lsp-deferred)
+    ;;(lsp-deferred)
     (eldoc-mode +1)
     ;; set tab-width to 4 spaces
     ((lambda () (setq tab-width 4)))
@@ -988,8 +1039,8 @@ Opt in line numbers on these modes regardless of global setting
   ;; Set up before-save hooks to format buffer and add/delete imports.
   ;; Make sure you don't have other gofmt/goimports hooks enabled.
   (defun lsp-go-install-save-hooks ()
-    (add-hook 'before-save-hook #'lsp-format-buffer t t)
-    (add-hook 'before-save-hook #'lsp-organize-imports t t))
+     (add-hook 'before-save-hook #'lsp-format-buffer t t)
+     (add-hook 'before-save-hook #'lsp-organize-imports t t))
 
   (add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
 
@@ -998,18 +1049,32 @@ Opt in line numbers on these modes regardless of global setting
 ** Python
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package lsp-pyright
-    :hook (python-mode . (lambda ()
-                            (require 'lsp-pyright)
-                            (lsp-deferred))))
+     :hook (python-mode . (lambda ()
+                             (require 'lsp-pyright)
+                             (lsp-deferred))))
 #+end_src
 
 ** Flycheck
 [[https://www.flycheck.org/manual/latest/index.html][Flycheck Manual]]
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (use-package flycheck
-  :init (global-flycheck-mode)
-  :config (setq-default flycheck-disabled-checkers '(lsp)))
+  (defun my/use-eslint-from-node-modules ()
+    (let* ((root (locate-dominating-file
+                  (or (buffer-file-name) default-directory)
+                  "node_modules"))
+           (eslint
+            (and root
+                 (expand-file-name "node_modules/.bin/eslint"
+                                   root))))
+      (when (and eslint (file-executable-p eslint))
+        (setq-local flycheck-javascript-eslint-executable eslint))))
+
+  (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
+
+  (use-package flycheck)
+      ;;:init (global-flycheck-mode)
+      ;;:config)
+      ;;(setq-default flycheck-disabled-checkers '(lsp))
 #+end_src
 
 ** JSON
@@ -1135,45 +1200,45 @@ Visual fill mode, visual fill column mode settings
   (setq org-outline-path-complete-in-steps nil)
   (setq org-refile-allow-creating-parent-nodes 'confirm)
 
-    ;; I use C-c c to start capture mode
-    (global-set-key (kbd "C-c c") 'org-capture)
+  ;; I use C-c c to start capture mode
+  (global-set-key (kbd "C-c c") 'org-capture)
 
-    ;; Capture templates for: TODO tasks, Notes, appointments, phone calls, meetings, and org-protocol
-    (setq org-capture-templates
-          (quote (("g" "General To-Do"
-                   entry (file+headline "~/org/todos.org" "General Tasks")
-                   "* TODO [#B] %?\n:Created: %T\n "
-                   :empty-lines 0)
-                  ("j" "Work Log Entry"
-                   entry (file+datetree "~/org/log.org")
-                   "* %?"
-                   :empty-lines 0)
-                  ("n" "Note"
-                   entry (file+headline "~/org/notes.org" "Notes")
-                   "** %?"
-                   :empty-lines 0)
-                  ("q" "Question"
-                   entry (file+headline "~/org/questions.org" "General Question")
-                   "* QUESTION %?\n:Created: %T\n Answer: "
-                   :empty-lines 0)
-                  ("c" "Code To-Do"
-                   entry (file+headline "~/org/todos.org" "Code Related Tasks")
-                   "* TODO [#B] %?\n:Created: %T\n%i\n%a\nProposed Solution: "
-                   :empty-lines 0)
-                  ("m" "Meeting"
-                   entry (file+datetree "~/org/meetings.org")
-                   "* %? :meeting:%^g \n:Created: %T\n** Attendees\n*** \n** Notes\n** Action Items"
-                   :tree-type week
-                   :clock-in t
-                   :clock-resume t
-                   :empty-lines 0)
-                  ("t" "Ticket"
-                   entry (file+headline "~/org/tickets.org" "Tickets")
-                   "* TODO [#B] %? %^g\nCreated: %T\n** Jira Link: \n** Notes\n** Status\n - [ ] Research\n - [ ] PR\n - [ ] Verifying\n** Subtasks"
-                   :empty-lines 0)
-                  ("p" "Sprint"
-                   entry (file "~/org/sprints.org" )
-                   "** Kraken Sprint %?\n:Created: %T\nSCHEDULED: %T\nDEADLINE: %T\n*** GOAL\n*** Notes\n*** Review\n*** Planning\n*** Retrospective "))))
+  ;; Capture templates for: TODO tasks, Notes, appointments, phone calls, meetings, and org-protocol
+  (setq org-capture-templates
+        (quote (("g" "General To-Do"
+                 entry (file+headline "~/org/todos.org" "General Tasks")
+                 "* TODO [#B] %?\n:Created: %T\n "
+                 :empty-lines 0)
+                ("j" "Work Log Entry"
+                 entry (file+datetree "~/org/log.org")
+                 "* %?"
+                 :empty-lines 0)
+                ("n" "Note"
+                 entry (file+headline "~/org/notes.org" "Notes")
+                 "** %?"
+                 :empty-lines 0)
+                ("q" "Question"
+                 entry (file+headline "~/org/questions.org" "General Question")
+                 "* QUESTION %?\n:Created: %T\n Answer: "
+                 :empty-lines 0)
+                ("c" "Code To-Do"
+                 entry (file+headline "~/org/todos.org" "Code Related Tasks")
+                 "* TODO [#B] %?\n;; :Created: %T\n%i\n%a\nProposed Solution: "
+                 :empty-lines 0)
+                ("m" "Meeting"
+                 entry (file+datetree "~/org/meetings.org")
+                 "* %? :meeting:%^g \n:Created: %T\n** Attendees\n*** \n** Notes\n** Action Items"
+                 :tree-type week
+                 :clock-in t
+                 :clock-resume t
+                 :empty-lines 0)
+                ("t" "Ticket"
+                 entry (file+headline "~/org/tickets.org" "Tickets")
+                 "* TODO [#B] %? %^g\nCreated: %T\n** Jira Link: \n** Notes\n** Status\n - [ ] Research\n - [ ] PR\n - [ ] Verifying\n** Subtasks"
+                 :empty-lines 0)
+                ("p" "Sprint"
+                 entry (file "~/org/sprints.org" )
+                 "** Kraken Sprint %?\n:Created: %T\nSCHEDULED: %T\nDEADLINE: %T\n*** GOAL\n*** Notes\n*** Review\n*** Planning\n*** Retrospective "))))
 #+end_src
 
 ** Tags
@@ -1393,15 +1458,15 @@ Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beaut
 #+end_src
 
 ** Org Bullets
-#+begin_src emacs-lisp :tangle lisp/hooks.el
+#+begin_src emacs-lisp :tangle lisp/packages.el
     ;; (use-package org-bullets
     ;; ;  :after org
     ;; ;  :hook (org-mode . org-bullets-mode)
     ;;   :custom
     ;;   (org-bullets-bullet-list '("⁖" "◉" "○" "✸" "✿")))
 
-  (use-package org-modern)
-
+  (use-package org-modern
+    :straight (org-modern :type git :flavor melpa :host github :repo "minad/org-modern" :commit 63372bda43a9d0dd9940c1ec3c53f752b642ac41))
   (with-eval-after-load 'org (global-org-modern-mode))
 #+end_src
 
@@ -1487,7 +1552,6 @@ Define how tickets progress
     (load-file "~/.emacs.d/init.el"))
 #+end_src
 
-
 * vTerm
 - vTerm
 - vterm-toggle: [[https://github.com/jixiuf/vterm-toggle]]
@@ -1507,7 +1571,6 @@ Define how tickets progress
   ;(define-key vterm-mode-map (kbd "<f9>") 'vterm-toggle)
   ;(define-key vterm-mode-map (kbd "C-RET") #'vterm-toggle-insert-cd)
 #+end_src
-
 
 * Bootstrap
 We create a bootstrap file to load all the lisp files that were generated by the code blocks above

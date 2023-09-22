@@ -57,10 +57,12 @@ print-test:
 test-gui:
 	$(shell $(EMACS_BINARY) -Q -l $(DEST_FILE))
 
-## clean: Clean up
-clean:
-	rm -rf $(DEST_DIR) $(DEST_FILE) $(EARLY_INIT_FILE)
+clear-packages:
+	rm -rf $(HOME)/.emacs.d/straight
 
+## clean: Clean up
+clean: clear-packages 
+	rm -rf $(DEST_DIR) $(DEST_FILE) $(EARLY_INIT_FILE)
 
 ## install: Move files to .emacs.d
 install:
