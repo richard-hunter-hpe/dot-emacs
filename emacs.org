@@ -788,6 +788,8 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
     (lsp-enable-snippet nil)
     (lsp-enable-flycheck nil)
     :hook ((lsp-mode-hook . setup-lsp-mode)
+           ;; run flycheck setup so that it gets initialized when first starting the server
+           ;; this results in the setup being run twice when opening the first file in a ts/js project
            (lsp-after-initialize-hook . setup-flycheck)))
 
   (use-package lsp-ui :commands lsp-ui-mode)
@@ -952,7 +954,7 @@ Opt in line numbers on these modes regardless of global setting
             (interactive)
             (lsp)
             (require 'lsp-diagnostics)
-      
+
             (add-node-modules-path)
             (prettier-js-mode)
             (smartparens-mode)
