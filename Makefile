@@ -21,7 +21,6 @@ EMACS_BINARY := /Users/hunterri/git/emacs/src/emacs
 
 EARLY_INIT = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"early-init.org\")")
 
-
 # The following will compile emacs.org to emacs.el
 EMACS = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"emacs.org\")")
 
@@ -69,7 +68,7 @@ install:
 	cp $(EI_SRC_FILE) $(HOME)/.emacs.d
 	cp $(SRC_FILE) $(HOME)/.emacs.d
 	cp $(SRC_DIR)/Makefile $(HOME)/.emacs.d
-	cd $(HOME)/.emacs.d && make build-early-init
-	mv $(HOME)/.emacs.d/early-init.el $(HOME)/.emacs.d/early-init.el
+	#cd $(HOME)/.emacs.d && make build-early-init
+	#mv $(HOME)/.emacs.d/early-init.el $(HOME)/.emacs.d/early-init.el
 	cd $(HOME)/.emacs.d && make build
 	mv $(HOME)/.emacs.d/emacs.el $(HOME)/.emacs.d/init.el

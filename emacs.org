@@ -1,4 +1,4 @@
-
+1
 #+begin_src emacs-lisp :tangle lisp/common.el
   ;; supress debugger by default
   ;; (setq debug-on-error t)
@@ -761,42 +761,45 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 
 ** LSP
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (defun setup-lsp-mode ()
-    (message "setting up lsp mode..."))
+    (defun setup-lsp-mode ()
+      (message "setting up lsp mode..."))
 
-  (defun setup-flycheck ()
-    (message "setting up flycheck mode...")
-    (lsp-diagnostics-flycheck-enable)
-    (flycheck-mode)
-    (setq-default flycheck-disabled-checkers '(lsp))
-    (flycheck-add-next-checker 'javascript-eslint 'lsp)
-    ;; run flycheck on save and on opening a new line
-    (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
-     ;; prefer eslint over all checkers if it can be enabled, do it
-    (flycheck-select-checker 'javascript-eslint)
-    (message "using eslint if available")
-    ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
-                    (message "eslint IS available, attempting to set checker")
-                  (flycheck-select-checker 'javascript-eslint)))))
+    (defun setup-flycheck ()
+      (message "setting up flycheck mode...")
+      (lsp-diagnostics-flycheck-enable)
+      (flycheck-mode)
+      (setq-default flycheck-disabled-checkers '(lsp))
+
+      (unless (derived-mode-p 'json-mode)
+        (flycheck-add-next-checker 'javascript-eslint 'lsp))
+      ;; run flycheck on save and on opening a new line
+      (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
+       ;; prefer eslint over all checkers if it can be enabled, do it
+      (unless (derived-mode-p 'json-mode)
+        (flycheck-select-checker 'javascript-eslint))
+      (message "using eslint if available")
+      ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
+                      (message "eslint IS available, attempting to set checker")
+                    (flycheck-select-checker 'javascript-eslint)))))
 
 
 
-  (use-package lsp-mode
-    :commands lsp
+    (use-package lsp-mode
+      :commands lsp
 
-    :custom
-    (lsp-enable-snippet nil)
-    (lsp-enable-flycheck nil)
-    :hook ((lsp-mode-hook . setup-lsp-mode)
-           ;; run flycheck setup so that it gets initialized when first starting the server
-           ;; this results in the setup being run twice when opening the first file in a ts/js project
-           (lsp-after-initialize-hook . setup-flycheck)))
+      :custom
+      (lsp-enable-snippet nil)
+      (lsp-enable-flycheck nil)
+      :hook ((lsp-mode-hook . setup-lsp-mode)
+             ;; run flycheck setup so that it gets initialized when first starting the server
+             ;; this results in the setup being run twice when opening the first file in a ts/js project
+             (lsp-after-initialize-hook . setup-flycheck)))
 
-  (use-package lsp-ui :commands lsp-ui-mode)
-  (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
-  (use-package helm-lsp :commands helm-lsp-workspace-symbol)
-  (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
-  (use-package which-key :config (which-key-mode))
+    (use-package lsp-ui :commands lsp-ui-mode)
+    (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+    (use-package helm-lsp :commands helm-lsp-workspace-symbol)
+    (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+    (use-package which-key :config (which-key-mode))
 
 #+end_src
 
@@ -949,38 +952,24 @@ Opt in line numbers on these modes regardless of global setting
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
 
-          (defun setup-js-ts-mode ()
-            (message "Setting up js/ts mode")
-            (interactive)
-            (lsp)
-            (require 'lsp-diagnostics)
+  (defun setup-js-ts-mode ()
+    ;; json-mode runs js-mode hooks so don't run
+    (unless (derived-mode-p 'json-mode)
+    (message "Setting up js/ts mode")
+    (interactive)
+    (lsp)
+    (require 'lsp-diagnostics)
+    (add-node-modules-path)
+    (prettier-js-mode)
+    (smartparens-mode)
+    (eldoc-mode +1)
+    (setq lsp-disagnostics-provider :none)
+    (setup-flycheck)))
 
-            (add-node-modules-path)
-            (prettier-js-mode)
-            (smartparens-mode)
-            (eldoc-mode +1)
-            (setq lsp-disagnostics-provider :none)
-            (setup-flycheck)
-          ;  (lsp-diagnostics-flycheck-enable)
-          ;  (flycheck-mode)
-          ;  ;; run flycheck on save and on opening a new line
-          ;  (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
-          ;  (setq-default flycheck-disabled-checkers '(lsp))
-          ;  (flycheck-add-next-checker 'javascript-eslint 'lsp)
-          ;  ;; prefer eslint over all checkers if it can be enabled, do it
-          ;  (message "using eslint if available")
-          ;  (flycheck-select-checker 'javascript-eslint)
 
-  ;          ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
-   ;                         (message "eslint IS available, attempting to set checker")
-    ;                      (flycheck-select-checker 'javascript-eslint)))
-     ;        )
-            ;;(flycheck-add-next-checker 'javascript-eslint 'lsp)
-        )
-
-        (add-hook 'js-mode-hook #'setup-js-ts-mode)
-        (add-hook 'js-jsx-mode-hook #'setup-js-ts-mode)
-        (add-hook 'typescript-mode-hook #'setup-js-ts-mode)
+  (add-hook 'js-mode-hook #'setup-js-ts-mode)
+  (add-hook 'js-jsx-mode-hook #'setup-js-ts-mode)
+  (add-hook 'typescript-mode-hook #'setup-js-ts-mode)
 #+end_src
 
 ** TypeScript
@@ -1081,7 +1070,19 @@ Opt in line numbers on these modes regardless of global setting
 
 ** JSON
 #+begin_src emacs-lisp :tangle lisp/packages.el
+  (defun setup-json-mode ()
+    (message "Setting up json mode")
+    (interactive)
+    (lsp)
+    (require 'lsp-diagnostics)
+    (add-node-modules-path)
+    (prettier-js-mode)
+    (eldoc-mode +1)
+    (setq lsp-disagnostics-provider :none))
+
   (use-package json-mode)
+  (add-hook 'json-mode-hook #'setup-json-mode)
+
 #+end_src
 
 ** YAML
@@ -1559,9 +1560,8 @@ Define how tickets progress
 - vterm-toggle: [[https://github.com/jixiuf/vterm-toggle]]
 - multi-vterm: https://github.com/suonlight/multi-vterm
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (use-package vterm
-    :hook (after-init . vterm-mode))
-
+  (use-package vterm)
+    ;:hook (after-init . vterm-mode))
   (use-package vterm-toggle
     :defer)
   ;; (use-package multi-vterm)
@@ -1570,8 +1570,6 @@ Define how tickets progress
 #+begin_src emacs-lisp :tangle lisp/keybindings.el
   (global-set-key (kbd "<f9>") 'vterm-toggle)
   (global-set-key (kbd "C-<f9>") 'vterm-toggle-cd)
-  ;(define-key vterm-mode-map (kbd "<f9>") 'vterm-toggle)
-  ;(define-key vterm-mode-map (kbd "C-RET") #'vterm-toggle-insert-cd)
 #+end_src
 
 * Bootstrap
