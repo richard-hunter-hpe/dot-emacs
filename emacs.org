@@ -940,9 +940,8 @@ Opt in line numbers on these modes regardless of global setting
 
 #+begin_src emacs-lisp :tangle lisp/modes.el
 
-  ;; js files auto open in js-mode already... this was causing json files to fire js-mode hooks
   ;; Make it so all '.js' files auto load 'js-mode'
-  ;;(add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
+  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
 
   ;; Make it so all '.jsx' files auto load 'js-jsx-mode'
   (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-jsx-mode))
@@ -1567,16 +1566,27 @@ Define how tickets progress
 - vterm-toggle: [[https://github.com/jixiuf/vterm-toggle]]
 - multi-vterm: https://github.com/suonlight/multi-vterm
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  ;(use-package vterm)
-  ;  hook (after-init . vterm-mode))
-  ;(use-package vterm-toggle
-  ;  :defer)
-  ;; (use-package multi-vterm)
+  (use-package vterm
+    :straight (:post-build ((setq vterm-always-compile-module t)
+                            (require 'vterm)))
+    :commands (vterm vterm-other-window))
+
+  (use-package vterm-toggle
+      :defer)
+    ;; (use-package multi-vterm)
 #+end_src
 
 #+begin_src emacs-lisp :tangle lisp/keybindings.el
   (global-set-key (kbd "<f9>") 'vterm-toggle)
   (global-set-key (kbd "C-<f9>") 'vterm-toggle-cd)
+#+end_src
+
+* Experiments
+Here are packages and things I'm experimenting with...
+
+** Spacious Padding
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package spacious-padding)
 #+end_src
 
 * Bootstrap
