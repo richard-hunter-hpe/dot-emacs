@@ -1,10 +1,10 @@
 * Early Init
 - hide certain elements if in GUI emacs including scroll bar, tool bar
 - disable package.el
+- Set any emacs specific env vars
 
 #+begin_src emacs-lisp :tangle early-init.el
     (setq package-enable-at-startup nil)
-
     (setq inhibit-startup-message t
           use-file-dialog nil
           frame-resize-pixelwise t
