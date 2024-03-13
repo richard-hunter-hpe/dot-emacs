@@ -173,6 +173,7 @@ Set PATH for GUI emacs
   (setq exec-path (append exec-path '("/opt/homebrew/bin")))
   (setq exec-path (append exec-path '("/opt/homebrew/sbin")))
   (setq exec-path (append exec-path '("/Users/hunterri/go/bin")))
+  ;;(setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v18.19.0/bin")))
   (setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v16.16.0/bin")))
 
 
@@ -180,6 +181,7 @@ Set PATH for GUI emacs
   (setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/bin"))
   (setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/sbin"))
   (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/go/bin"))
+  ;;(setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v18.19.0/bin"))
   (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v16.16.0/bin"))
 
 #+end_src
@@ -429,12 +431,10 @@ Lightweight package for easily creating cursor presets
   (define-key global-map (kbd "C-c p") #'cursory-set-preset)
 #+end_src
 
-** Modus Themes
+** Themes
 
-Configure =modus-vivendi= theme. This theme is a highly polished and well-maintained theme with high legibility.
+Configure =modus-vivendi= theme and other themes. 
 Manual and configuration details can be found [[https://protesilaos.com/modus-themes][here]].
-(Note, for now not using it as a default theme, but at any point =F6= can be used to toggle the theme on.)
-
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package modus-themes
     :init
@@ -456,16 +456,13 @@ Manual and configuration details can be found [[https://protesilaos.com/modus-th
             (header-date . (grayscale workaholic bold-today))
             (scheduled . uniform))
           )
-      ;; =f6= for toggling between light and dark modes
+    ;; escape hatch to modus themes from any other weak ass theme, f6 to toggle
     :bind ("<f6>" . modus-themes-toggle))
 #+end_src
 
 I like =doom-themes= also...
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (use-package doom-themes
-    ;; currently enjoying doom-xcode theme
-    :config (load-theme 'doom-xcode t)
-  )
+  (use-package doom-themes)
 #+end_src
 
 Humanoid themes
@@ -478,6 +475,12 @@ EF Themes
   (use-package ef-themes)
 #+end_src
 
+
+** Default Theme
+Set the default theme here:
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (load-theme 'doom-xcode t)
+#+end_src
 
 ** Tab Bar
 Don't show the buttons on tabs
@@ -750,6 +753,17 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
     (setq projectile-project-search-path '("~/git")))
   (setq projectile-switch-project-action #'projectile-dired))
 #+end_src
+
+* Treesitter
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (straight-use-package 'tree-sitter)
+  (straight-use-package 'tree-sitter-langs) 
+#+end_src
+
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (global-tree-sitter-mode)
+#+end_src
+
 * LSP & Company
 ** Company
 #+begin_src emacs-lisp :tangle lisp/packages.el
@@ -927,6 +941,10 @@ Opt in line numbers on these modes regardless of global setting
 ** NodeJs
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package add-node-modules-path)
+  ;;(use-package add-node-modules-path
+  ;;  :custom
+  ;;  (add-node-modules-path-command '("npm root"))) 
+
   (use-package prettier-js)
 #+end_src
 
@@ -985,6 +1003,7 @@ Testing out lsp-tailwindcss
     (smartparens-mode)
     (eldoc-mode +1)
     (setq lsp-disagnostics-provider :none)
+    (tree-sitter-hl-mode)
     (setup-flycheck)))
 
 
@@ -1039,6 +1058,7 @@ Testing out lsp-tailwindcss
     (interactive)
     ;;(lsp-deferred)
     (eldoc-mode +1)
+    (tree-sitter-hl-mode)
     ;; set tab-width to 4 spaces
     ((lambda () (setq tab-width 4)))
     ((lambda () (flycheck-select-checker 'go-gofmt)))
@@ -1063,6 +1083,7 @@ Testing out lsp-tailwindcss
   (use-package lsp-pyright
      :hook (python-mode . (lambda ()
                              (require 'lsp-pyright)
+                             (tree-sitter-hl-mode)
                              (lsp-deferred))))
 #+end_src
 
@@ -1079,6 +1100,8 @@ Testing out lsp-tailwindcss
                  (expand-file-name "node_modules/.bin/eslint"
                                    root))))
       (when (and eslint (file-executable-p eslint))
+        ;;(message eslint)
+        ;;(setq flycheck-javascript-eslint-executable "/Users/hunterri/node_modules/.bin/eslint"))))
         (setq-local flycheck-javascript-eslint-executable eslint))))
 
   (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
@@ -1095,6 +1118,7 @@ Testing out lsp-tailwindcss
     (message "Setting up json mode")
     (interactive)
     (lsp)
+    (tree-sitter-hl-mode)
     (require 'lsp-diagnostics)
     (add-node-modules-path)
     (prettier-js-mode)
