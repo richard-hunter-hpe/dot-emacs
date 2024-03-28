@@ -10,80 +10,7 @@
 - [[JavaScript][JavaScript]]
 
 * Early Init
-- hide certain elements if in GUI emacs including scroll bar, tool bar
-- disable package.el
-
-#+begin_src emacs-lisp :tangle lisp/early-init.el
-    (setq package-enable-at-startup nil)
-
-    (setq inhibit-startup-message t
-          use-file-dialog nil
-          frame-resize-pixelwise t
-          frame-inhibit-implied-resize t
-          use-dialog-box t ; only for mouse events, which I seldom use
-          inhibit-startup-buffer-menu t
-          inhibit-splash-screen t)
-
-
-  (setq comp-async-report-warnings-errors nil)
-  ;; The default is 800 kilobytes.  Measured in bytes.
-  (setq gc-cons-threshold (* 50 1000 1000))
-
-  ;; Profile emacs startup
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (message "*** Emacs loaded in %s with %d garbage collections."
-                       (format "%.2f seconds"
-                               (float-time
-                                (time-subtract after-init-time before-init-time)))
-                       gcs-done)))
-
-      ;; I do not use those graphical elements by default, but I do enable
-      ;; them from time-to-time for testing purposes or to demonstrate
-      ;; something.
-      (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
-      (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
-      (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
-        (defun rh-emacs-re-enable-frame-theme (_frame)
-          "Re-enable active theme, if any, upon FRAME creation.
-          Add this to `after-make-frame-functions' so that new frames do
-          not retain the generic background set by the function
-          `rh-emacs-avoid-initial-flash-of-light'."
-          (when-let ((theme (car custom-enabled-themes)))
-            (enable-theme theme)))
-
-        ;; NOTE 2023-02-05: The reason the following works is because (i) the
-        ;; `mode-line-format' is specified again and (ii) the
-        ;; `prot-emacs-theme-gsettings-dark-p' will load a dark theme.
-        (defun rh-emacs-avoid-initial-flash-of-light ()
-          "Avoid flash of light when starting Emacs, if needed.
-            New frames are instructed to call `prot-emacs-re-enable-frame-theme'."
-              (setq mode-line-format nil)
-              (set-face-attribute 'default nil :background "#000000" :foreground "#ffffff")
-              (set-face-attribute 'mode-line nil :background "#000000" :foreground "#ffffff" :box 'unspecified)
-              (add-hook 'after-make-frame-functions #'rh-emacs-re-enable-frame-theme))
-
-        (rh-emacs-avoid-initial-flash-of-light)
-
-        ;; (add-hook 'after-init-hook (lambda () (set-frame-name "home")))
-
-        ;; bootstrap straight.el
-        (defvar bootstrap-version)
-            (let ((bootstrap-file
-                   (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-                  (bootstrap-version 6))
-              (unless (file-exists-p bootstrap-file)
-                (with-current-buffer
-                    (url-retrieve-synchronously
-                       "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-                     'silent 'inhibit-cookies)
-                  (goto-char (point-max))
-                  (eval-print-last-sexp)))
-              (load bootstrap-file nil 'nomessage))
-
-         ;; set use-package to use straight.el
-         (setq straight-use-package-by-default t)
-#+end_src
+See early-init.org
 
 * Startup Config
 ** Basic Internals
@@ -475,6 +402,11 @@ EF Themes
   (use-package ef-themes)
 #+end_src
 
+Declare all themes as safe
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (setq custom-safe-themes t)
+#+end_src
+
 
 ** Default Theme
 Set the default theme here:
@@ -508,6 +440,64 @@ Customize Tab Bar face
 =doom-modeline= requires =nerd-fonts=
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (straight-use-package '(nerd-fonts :type git :host github :repo "twlz0ne/nerd-fonts.el"))
+#+end_src
+
+
+
+** Buffer Display
+- an =alist= is just a "list of lists" in elisp
+- each element in the list takes the form:
+
+#+begin_src 
+     ( BUFFER-MATCHER
+       LIST-OF-DISPLAY-FUNCTIONS
+       PARAMETERS)
+#+end_src
+
+See [[https://protesilaos.com/codelog/2024-02-08-emacs-window-rules-display-buffer-alist/][this video]] for a nice tutorial on setting this variable.
+
+#+begin_src emacs-lisp :tangle lisp/common.el
+  (setq display-buffer-alist
+      '(
+        ;; no window
+        ("\\`\\*Async Shell Command\\*\\'"
+         (display-buffer-no-window))
+
+        ("\\`\\*\\(Warnings\\|Compile-Log\\|Org Links\\)\\*\\'"
+         (display-buffer-no-window)
+         (allow-no-window . t))
+
+        ("\\*vterm\\*"
+         (display-buffer-reuse-mode-window)
+         (dedicated . t))
+
+        ("\\*Org \\(Select\\|Note\\)\\*" ; the `org-capture' key selection and `org-add-log-note'
+           (display-buffer-in-side-window)
+           (dedicated . t)
+           (side . bottom)
+           (slot . 0)
+           (window-parameters . ((mode-line-format . none))))
+
+        ;; bottom buffer (NOT side window)
+        ((or . ((derived-mode . flymake-diagnostics-buffer-mode)
+                (derived-mode . flymake-project-diagnostics-mode)
+                (derived-mode . messages-buffer-mode)
+                (derived-mode . backtrace-mode)))
+         (display-buffer-reuse-mode-window display-buffer-at-bottom)
+         (window-height . 0.3)
+         (dedicated . t)
+         (preserve-size . (t . t)))
+
+        ("\\*Occur\\*"
+         ;; list of display functions
+         (display-buffer-reuse-mode-window
+          display-buffer-below-selected)
+         ;; Parameters
+         (window-height . fit-window-to-buffer)
+         (dedicated . t)
+         )
+
+        ))
 #+end_src
 
 * Custom Utility Functions
@@ -1635,14 +1625,11 @@ Here are packages and things I'm experimenting with...
 * Bootstrap
 We create a bootstrap file to load all the lisp files that were generated by the code blocks above
 
-#+begin_src emacs-lisp :tangle early-init.el
-  (add-to-list 'load-path "~/.emacs.d/lisp")
-  (load-library "early-init")
-#+end_src
+
 
 #+begin_src emacs-lisp :tangle emacs.el
   (add-to-list 'load-path "~/.emacs.d/lisp")
-  (load-library "early-init")
+  ;;(load-library "early-init")
   (load-library "common")
   (load-library "packages")
   (load-library "modes")

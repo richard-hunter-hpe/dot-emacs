@@ -5,11 +5,14 @@
 
 #+begin_src emacs-lisp :tangle early-init.el
     (setq package-enable-at-startup nil)
+
     (setq inhibit-startup-message t
+          site-run-file nil                         ; No site-wide run-time initializations
+          inhibit-default-init t                    ; No site-wide default library
           use-file-dialog nil
           frame-resize-pixelwise t
           frame-inhibit-implied-resize t
-          use-dialog-box t ; only for mouse events, which I seldom use
+          use-dialog-box t                          ; only for mouse events, which I seldom use
           inhibit-startup-buffer-menu t
           inhibit-splash-screen t)
 
@@ -72,4 +75,5 @@
 
          ;; set use-package to use straight.el
          (setq straight-use-package-by-default t)
+         ;; hello world
 #+end_src

@@ -17,7 +17,7 @@ DEST_FILE := $(SRC_DIR)/emacs.el
 DEST_DIR := $(SRC_DIR)/lisp
 
 # EMACS_BINARY should point to your installation of GNU emacs
-EMACS_BINARY := /Users/hunterri/git/emacs/src/emacs
+EMACS_BINARY := $(HOME)/git/emacs/src/emacs
 
 EARLY_INIT = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"early-init.org\")")
 
@@ -34,6 +34,7 @@ help:
 all: build
 
 setup-dest-dir:
+	rm -rf $(DEST_DIR)
 	mkdir -p $(DEST_DIR)
 
 build-early-init: setup-dest-dir
@@ -59,12 +60,15 @@ test-gui:
 clear-packages:
 	rm -rf $(HOME)/.emacs.d/straight
 
+clear-cache:
+	rm -rf $(HOME)/.emacs.d/eln-cache
+
 ## clean: Clean up
 clean: clear-packages 
 	rm -rf $(DEST_DIR) $(DEST_FILE) $(EARLY_INIT_FILE)
 
-## install: Move files to .emacs.d
-install:
+## install: Tangle and move files to .emacs.d
+install: clear-cache
 	cp $(EI_SRC_FILE) $(HOME)/.emacs.d
 	cp $(SRC_FILE) $(HOME)/.emacs.d
 	cp $(SRC_DIR)/Makefile $(HOME)/.emacs.d
@@ -72,3 +76,6 @@ install:
 	mv $(HOME)/.emacs.d/early-init.el $(HOME)/.emacs.d/early-init.el
 	cd $(HOME)/.emacs.d && make build
 	mv $(HOME)/.emacs.d/emacs.el $(HOME)/.emacs.d/init.el
+
+## clean-install: Clean all pagages and lisp and rebuildOB
+clean-install: clean install
