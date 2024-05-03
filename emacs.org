@@ -747,11 +747,40 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 * Treesitter
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (straight-use-package 'tree-sitter)
-  (straight-use-package 'tree-sitter-langs) 
+  (straight-use-package 'tree-sitter-langs)
+  (straight-use-package 'treesit-auto)
 #+end_src
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (global-tree-sitter-mode)
+  (require 'treesit-auto)
+
+  ;; this fixes a problem where v0.20.4 of this grammar blows up with emacs
+  (defvar rh/tsx-treesit-auto-recipe
+    (make-treesit-auto-recipe
+     :lang 'tsx
+     :ts-mode 'tsx-ts-mode
+     :remap '(typescript-tsx-mode)
+     :requires 'typescript
+     :url "https://github.com/tree-sitter/tree-sitter-typescript"
+     :revision "v0.20.3"
+     :source-dir "tsx/src"
+     :ext "\\.tsx\\'")
+    "Recipe for libtree-sitter-tsx.dylib")
+  (add-to-list 'treesit-auto-recipe-list rh/tsx-treesit-auto-recipe)
+
+  (defvar rh/typescript-treesit-auto-recipe
+    (make-treesit-auto-recipe
+     :lang 'typescript
+     :ts-mode 'typescript-ts-mode
+     :remap 'typescript-mode
+     :requires 'tsx
+     :url "https://github.com/tree-sitter/tree-sitter-typescript"
+     :revision "v0.20.3"
+     :source-dir "typescript/src"
+     :ext "\\.ts\\'")
+    "Recipe for libtree-sitter-typescript.dylib")
+  (add-to-list 'treesit-auto-recipe-list rh/typescript-treesit-auto-recipe)
 #+end_src
 
 * LSP & Company
@@ -960,6 +989,10 @@ Testing out lsp-tailwindcss
 ;;   '(lsp-tailwindcss :type git :host github :repo "merrickluo/lsp-tailwindcss"))
 #+end_src
 
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (straight-use-package
+   `(lsp-biome :type git :host github :repo "cxa/lsp-biome"))
+#+end_src
 
 #+begin_src emacs-lisp :tangle lisp/modes.el
 
@@ -1011,7 +1044,6 @@ Testing out lsp-tailwindcss
 
 
 #+begin_src emacs-lisp :tangle lisp/modes.el
-
   ;; Make it so all '.ts' files auto load 'typescript-mode'
   (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
 
@@ -1020,8 +1052,6 @@ Testing out lsp-tailwindcss
 
   ;; Use 2 spaces when tabbing TS elements
   (setq-default typescript-indent-level 2)
-
-
 #+end_src
 
 ** Go
@@ -1200,7 +1230,10 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
   (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
   (add-hook 'org-mode-hook 'org-indent-mode)
   (add-hook 'org-mode-hook 'visual-line-mode)
-  ;; (setq org-ellipsis " ▼")
+
+  ;; Ellipsis styling
+  (setq org-ellipsis "…")
+  (set-face-attribute 'org-ellipsis nil :inherit 'default :box nil)
 #+end_src
 
 ** Visual Settings
@@ -1212,6 +1245,18 @@ Set maximum indentation for description lists
 Hide emphasis markup (e.g. /.../ for italics, *...* for bold, etc.)
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (setq org-hide-emphasis-markers t)
+  (setq org-pretty-entities t)
+#+end_src
+
+
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (setq
+   ;; Edit settings
+   org-auto-align-tags nil
+   org-tags-column 0
+   org-catch-invisible-edits 'show-and-error
+   org-special-ctrl-a/e t
+   org-insert-heading-respect-content t)
 #+end_src
 
 Visual fill mode, visual fill column mode settings
@@ -1495,7 +1540,7 @@ Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beaut
   ;; (add-hook 'org-mode-hook 'variable-pitch-mode)
 #+end_src
 
-** Org Bullets
+** Org Modern
 #+begin_src emacs-lisp :tangle lisp/packages.el
     ;; (use-package org-bullets
     ;; ;  :after org
@@ -1505,6 +1550,7 @@ Define headline fonts, disabled for now...TODO [[https://zzamboni.org/post/beaut
 
   (use-package org-modern
     :straight (org-modern :type git :flavor melpa :host github :repo "minad/org-modern" :commit 63372bda43a9d0dd9940c1ec3c53f752b642ac41))
+  (setq org-modern-star "replace")
   (with-eval-after-load 'org (global-org-modern-mode))
 #+end_src
 
@@ -1549,31 +1595,31 @@ macOS swallows certain keybindings in terminal mode. Redfining the most importan
 ** Org JIRA
 Install
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (use-package org-jira)
+  ;;(use-package org-jira)
 #+end_src
 
 Set the Org JIRA base URL and authenticate
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   ;; Uncomment next two lines to debug connection issues w/ JIRA
-  (setq request-log-level 'blather)
-  (setq request-message-level 'blather)
+  ;;(setq request-log-level 'blather)
+  ;;(setq request-message-level 'blather)
 
-  (setq jiralib-url "https://nimblejira.nimblestorage.com")
+  ;;(setq jiralib-url "https://nimblejira.nimblestorage.com")
 
   ;; pull token from .authinfo
-  (setq jiralib-token
-        (cons "Authorization"
-              (concat "Bearer " (auth-source-pick-first-password
-                  :host "nimblejira.nimblestorage.com"))))
+  ;;(setq jiralib-token
+  ;;      (cons "Authorization"
+  ;;            (concat "Bearer " (auth-source-pick-first-password
+  ;;                :host "nimblejira.nimblestorage.com"))))
 #+end_src
 
 Custom JIRA Queries
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (setq org-jira-custom-jqls
-    '(
-      (:jql " assignee = currentUser() AND (status = \"To Do\" OR status = \"In Progress\") order by updated DESC "
-            :limit 100
-            :filename "my-open-issues")))
+  ;;(setq org-jira-custom-jqls
+  ;;  '(
+  ;;    (:jql " assignee = currentUser() AND (status = \"To Do\" OR status = \"In Progress\") order by updated DESC "
+  ;;          :limit 100
+  ;;          :filename "my-open-issues")))
 #+end_src
 
 Define how tickets progress
@@ -1629,7 +1675,7 @@ We create a bootstrap file to load all the lisp files that were generated by the
 
 #+begin_src emacs-lisp :tangle emacs.el
   (add-to-list 'load-path "~/.emacs.d/lisp")
-  ;;(load-library "early-init")
+  ; (load-library "early-init")
   (load-library "common")
   (load-library "packages")
   (load-library "modes")

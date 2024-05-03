@@ -75,5 +75,4 @@
 
          ;; set use-package to use straight.el
          (setq straight-use-package-by-default t)
-         ;; hello world
 #+end_src

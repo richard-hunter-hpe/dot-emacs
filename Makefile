@@ -22,7 +22,7 @@ EMACS_BINARY := $(HOME)/git/emacs/src/emacs
 EARLY_INIT = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"early-init.org\")")
 
 # The following will compile emacs.org to emacs.el
-EMACS = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"emacs.org\")")
+EMACS = $(shell $(EMACS_BINARY) -nw --batch --eval "(load-file \"early-init.el\")" --eval "(require 'org)" --eval "(org-babel-load-file \"emacs.org\")")
 
 .PHONY: test build clean help install
 
