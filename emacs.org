@@ -1,3 +1,4 @@
+
 #+begin_src emacs-lisp :tangle lisp/common.el
   ;; supress debugger by default
   ;; (setq debug-on-error t)
@@ -7,7 +8,7 @@
 
 * Quick Links
 - [[Org Mode][Org Mode]]
-- [[JavaScript][JavaScript]]
+- [[JavaScript][JavaScript]] 
 
 * Early Init
 See early-init.org
@@ -98,18 +99,22 @@ Set PATH for GUI emacs
 #+begin_src emacs-lisp :tangle lisp/common.el
   (setq exec-path (append exec-path '("/usr/local/bin")))
   (setq exec-path (append exec-path '("/opt/homebrew/bin")))
+  (setq exec-path (append exec-path '("/opt/homebrew/lib")))
+  (setq exec-path (append exec-path '("/opt/homebrew/lib/gcc/14")))
   (setq exec-path (append exec-path '("/opt/homebrew/sbin")))
   (setq exec-path (append exec-path '("/Users/hunterri/go/bin")))
-  ;;(setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v18.19.0/bin")))
-  (setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v16.16.0/bin")))
+  (setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v18.19.0/bin")))
+  ;;(setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v16.16.0/bin")))
 
 
   (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
   (setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/bin"))
+  (setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/lib"))
+  (setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/lib/gcc/14"))
   (setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/sbin"))
   (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/go/bin"))
-  ;;(setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v18.19.0/bin"))
-  (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v16.16.0/bin"))
+  (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v18.19.0/bin"))
+  ;;(setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v16.16.0/bin"))
 
 #+end_src
 
@@ -746,41 +751,60 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 
 * Treesitter
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (straight-use-package 'tree-sitter)
-  (straight-use-package 'tree-sitter-langs)
+  ;;(straight-use-package 'tree-sitter)
+  ;;(straight-use-package 'tree-sitter-langs)
   (straight-use-package 'treesit-auto)
 #+end_src
 
+Language grammars that don't seem to auto install with treesit-auto
+
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (setq treesit-language-source-alist
+   '((cmake "https://github.com/uyha/tree-sitter-cmake")
+     (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+     (json "https://github.com/tree-sitter/tree-sitter-json")
+     (make "https://github.com/alemuller/tree-sitter-make")
+     (markdown "https://github.com/ikatyang/tree-sitter-markdown")))
+
+  ;; install them please
+  (mapc #'treesit-install-language-grammar (mapcar #'car treesit-language-source-alist))
+#+end_src
+
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (global-tree-sitter-mode)
-  (require 'treesit-auto)
+    ;;(global-tree-sitter-mode)
+    (use-package treesit-auto
+      :custom
+      (treesit-auto-install 'prompt)
+      :config
+      (treesit-auto-add-to-auto-mode-alist 'all)
+      (global-treesit-auto-mode))
 
-  ;; this fixes a problem where v0.20.4 of this grammar blows up with emacs
-  (defvar rh/tsx-treesit-auto-recipe
-    (make-treesit-auto-recipe
-     :lang 'tsx
-     :ts-mode 'tsx-ts-mode
-     :remap '(typescript-tsx-mode)
-     :requires 'typescript
-     :url "https://github.com/tree-sitter/tree-sitter-typescript"
-     :revision "v0.20.3"
-     :source-dir "tsx/src"
-     :ext "\\.tsx\\'")
-    "Recipe for libtree-sitter-tsx.dylib")
-  (add-to-list 'treesit-auto-recipe-list rh/tsx-treesit-auto-recipe)
+    ;; this fixes a problem where v0.20.4 of this grammar blows up with emacs
+    ;;(defvar rh/tsx-treesit-auto-recipe
+    ;;  (make-treesit-auto-recipe
+    ;;   :lang 'tsx
+    ;;   :ts-mode 'tsx-ts-mode
+    ;;   :remap '(typescript-tsx-mode)
+    ;;   :requires 'typescript
+    ;;   :url "https://github.com/tree-sitter/tree-sitter-typescript"
+    ;;   :revision "v0.20.3"
+   ;;    :source-dir "tsx/src"
+   ;;    :ext "\\.tsx\\'")
+   ;;   "Recipe for libtree-sitter-tsx.dylib")
+    ;;(add-to-list 'treesit-auto-recipe-list rh/tsx-treesit-auto-recipe)
 
-  (defvar rh/typescript-treesit-auto-recipe
-    (make-treesit-auto-recipe
-     :lang 'typescript
-     :ts-mode 'typescript-ts-mode
-     :remap 'typescript-mode
-     :requires 'tsx
-     :url "https://github.com/tree-sitter/tree-sitter-typescript"
-     :revision "v0.20.3"
-     :source-dir "typescript/src"
-     :ext "\\.ts\\'")
-    "Recipe for libtree-sitter-typescript.dylib")
-  (add-to-list 'treesit-auto-recipe-list rh/typescript-treesit-auto-recipe)
+  ;  (defvar rh/typescript-treesit-auto-recipe
+  ;    (make-treesit-auto-recipe
+  ;     :lang 'typescript
+  ;     :ts-mode 'typescript-ts-mode
+  ;     :remap 'typescript-mode
+  ;     :requires 'tsx
+  ;     :url "https://github.com/tree-sitter/tree-sitter-typescript"
+  ;     :revision "v0.20.3"
+  ;     :source-dir "typescript/src"
+  ;     :ext "\\.ts\\'")
+  ;    "Recipe for libtree-sitter-typescript.dylib")
+    ;;(add-to-list 'treesit-auto-recipe-list rh/typescript-treesit-auto-recipe)
 #+end_src
 
 * LSP & Company
@@ -801,6 +825,8 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 
   (defun setup-flycheck ()
     (message "setting up flycheck mode...")
+    ;; (require 'lsp-biome)
+
     (lsp-diagnostics-flycheck-enable)
     (flycheck-mode)
     (setq-default flycheck-disabled-checkers '(lsp))
@@ -960,6 +986,7 @@ Opt in line numbers on these modes regardless of global setting
 ** NodeJs
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package add-node-modules-path)
+  (setq add-node-modules-path-command "echo \"$(npm root)/.bin\"")
   ;;(use-package add-node-modules-path
   ;;  :custom
   ;;  (add-node-modules-path-command '("npm root"))) 
@@ -990,17 +1017,20 @@ Testing out lsp-tailwindcss
 #+end_src
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (straight-use-package
-   `(lsp-biome :type git :host github :repo "cxa/lsp-biome"))
+  ;;(straight-use-package
+  ;; `(lsp-biome :type git :host github :repo "cxa/lsp-biome"))
 #+end_src
 
 #+begin_src emacs-lisp :tangle lisp/modes.el
 
   ;; Make it so all '.js' files auto load 'js-mode'
-  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-mode))
+  (add-to-list 'auto-mode-alist '("\\.js\\'" . js-ts-mode))
 
   ;; Make it so all '.jsx' files auto load 'js-jsx-mode'
   (add-to-list 'auto-mode-alist '("\\.jsx\\'" . js-jsx-mode))
+
+  ;; Make it so all '.html' files auto load html-mode'
+  (add-to-list 'auto-mode-alist '("\\.html\\'" . html-ts-mode))
 
   ;; Use 2 spaces when tabbing HTML elements
   (setq-default sgml-basic-offset 2)
@@ -1026,29 +1056,36 @@ Testing out lsp-tailwindcss
     (smartparens-mode)
     (eldoc-mode +1)
     (setq lsp-disagnostics-provider :none)
-    (tree-sitter-hl-mode)
     (setup-flycheck)))
 
 
-  (add-hook 'js-mode-hook #'setup-js-ts-mode)
+  (add-hook 'js-ts-mode-hook #'setup-js-ts-mode)
   (add-hook 'js-jsx-mode-hook #'setup-js-ts-mode)
-  (add-hook 'typescript-mode-hook #'setup-js-ts-mode)
+  (add-hook 'typescript-ts-mode-hook #'setup-js-ts-mode)
+  (add-hook 'tsx-ts-mode-hook #'setup-js-ts-mode)
 #+end_src
 
 ** TypeScript
 #+begin_src emacs-lisp :tangle lisp/packages.el
 
-  (use-package typescript-mode)
+  ;; (use-package typescript-mode)
+
+  ;; tsx-mode
+  ;; install deps
+  ;;(use-package coverlay)
+  ;;(use-package origami)
+  ;;(straight-use-package '(css-in-js-mode :type git :host github :repo "orzechowskid/tree-sitter-css-in-js"))
+  ;;(straight-use-package '(tsx-mode :type git :host github :repo "orzechowskid/tsx-mode.el"))
 
 #+end_src
 
 
 #+begin_src emacs-lisp :tangle lisp/modes.el
   ;; Make it so all '.ts' files auto load 'typescript-mode'
-  (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
+  (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-ts-mode))
 
   ;; Make it so all '.tsx' files auto load 'typescript-mode'
-  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . typescript-mode))
+  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . tsx-ts-mode))
 
   ;; Use 2 spaces when tabbing TS elements
   (setq-default typescript-indent-level 2)
@@ -1066,7 +1103,7 @@ Testing out lsp-tailwindcss
 
 #+begin_src emacs-lisp :tangle lisp/modes.el
 
-  (add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode))
+  (add-to-list 'auto-mode-alist '("\\.go\\'" . go-ts-mode))
 
 #+end_src
 
@@ -1085,7 +1122,7 @@ Testing out lsp-tailwindcss
     (setq lsp-disagnostics-provider :none))
 
 
-  (add-hook 'go-mode-hook #'setup-go-mode)
+  (add-hook 'go-ts-mode-hook #'setup-go-mode)
 
 
   ;; Set up before-save hooks to format buffer and add/delete imports.
@@ -1094,7 +1131,7 @@ Testing out lsp-tailwindcss
      (add-hook 'before-save-hook #'lsp-format-buffer t t)
      (add-hook 'before-save-hook #'lsp-organize-imports t t))
 
-  (add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
+  (add-hook 'go-ts-mode-hook #'lsp-go-install-save-hooks)
 
 #+end_src
 
@@ -1138,16 +1175,14 @@ Testing out lsp-tailwindcss
     (message "Setting up json mode")
     (interactive)
     (lsp)
-    (tree-sitter-hl-mode)
     (require 'lsp-diagnostics)
     (add-node-modules-path)
     (prettier-js-mode)
     (eldoc-mode +1)
     (setq lsp-disagnostics-provider :none))
 
-  (use-package json-mode)
-  (add-hook 'json-mode-hook #'setup-json-mode)
-
+  ;;(use-package json-ts-mode)
+  (add-hook 'json-ts-mode-hook #'setup-json-mode)
 #+end_src
 
 ** YAML
@@ -1163,6 +1198,11 @@ Testing out lsp-tailwindcss
 ** JenkinsFile
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package jenkinsfile-mode)
+#+end_src
+
+** Rego
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package rego-mode)
 #+end_src
 
 ** Markdown
@@ -1675,7 +1715,6 @@ We create a bootstrap file to load all the lisp files that were generated by the
 
 #+begin_src emacs-lisp :tangle emacs.el
   (add-to-list 'load-path "~/.emacs.d/lisp")
-  ; (load-library "early-init")
   (load-library "common")
   (load-library "packages")
   (load-library "modes")
