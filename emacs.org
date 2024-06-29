@@ -363,6 +363,27 @@ Lightweight package for easily creating cursor presets
   (define-key global-map (kbd "C-c p") #'cursory-set-preset)
 #+end_src
 
+
+** Popper.el
+Cool thing that helps with window management
+
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package popper
+  :ensure t ; or :straight t
+  :bind (("C-`"   . popper-toggle)
+         ("M-`"   . popper-cycle)
+         ("C-M-`" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          help-mode
+          compilation-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1))
+#+end_src
+
 ** Themes
 
 Configure =modus-vivendi= theme and other themes. 
@@ -764,10 +785,11 @@ Language grammars that don't seem to auto install with treesit-auto
      (elisp "https://github.com/Wilfred/tree-sitter-elisp")
      (json "https://github.com/tree-sitter/tree-sitter-json")
      (make "https://github.com/alemuller/tree-sitter-make")
+     (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
      (markdown "https://github.com/ikatyang/tree-sitter-markdown")))
 
-  ;; install them please
-  (mapc #'treesit-install-language-grammar (mapcar #'car treesit-language-source-alist))
+  ;; install them please - keep commented out because it runs every time
+  ;; (mapc #'treesit-install-language-grammar (mapcar #'car treesit-language-source-alist))
 #+end_src
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
@@ -1046,7 +1068,7 @@ Testing out lsp-tailwindcss
 
   (defun setup-js-ts-mode ()
     ;; json-mode runs js-mode hooks so don't run
-    (unless (derived-mode-p 'json-mode)
+    (unless (derived-mode-p 'json-ts-mode)
     (message "Setting up js/ts mode")
     (interactive)
     (lsp)
@@ -1100,7 +1122,6 @@ Testing out lsp-tailwindcss
 #+end_src
 
 
-
 #+begin_src emacs-lisp :tangle lisp/modes.el
 
   (add-to-list 'auto-mode-alist '("\\.go\\'" . go-ts-mode))
@@ -1115,7 +1136,7 @@ Testing out lsp-tailwindcss
     (interactive)
     ;;(lsp-deferred)
     (eldoc-mode +1)
-    (tree-sitter-hl-mode)
+    ;;(tree-sitter-hl-mode)
     ;; set tab-width to 4 spaces
     ((lambda () (setq tab-width 4)))
     ((lambda () (flycheck-select-checker 'go-gofmt)))
@@ -1138,7 +1159,7 @@ Testing out lsp-tailwindcss
 ** Python
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package lsp-pyright
-     :hook (python-mode . (lambda ()
+     :hook (python-ts-mode . (lambda ()
                              (require 'lsp-pyright)
                              (tree-sitter-hl-mode)
                              (lsp-deferred))))
@@ -1209,7 +1230,8 @@ Testing out lsp-tailwindcss
 Define a function =my-markdown-preview= for conveniently previewing markdown files in the GitHub style.
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (add-hook 'markdown-mode-hook '((set-window-margins (get-buffer-window) 10 10)))
+  ;; this is not working
+  ;;(add-hook 'markdown-mode-hook '((set-window-margins (get-buffer-window) 10 10)))
 #+end_src
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
@@ -1257,6 +1279,27 @@ Define a function =my-markdown-preview= for conveniently previewing markdown fil
       (imp-set-user-filter 'my-markdown-filter)
       ;;(my-imp-visit-buffer))
       (imp-visit-buffer))
+#+end_src
+
+
+
+* GitHub Copilot
+Install dependencies and package
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package editorconfig)
+  (use-package jsonrpc)
+  (use-package copilot
+    :straight (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")))
+#+end_src
+
+Enable copilot when prog mode is on
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (add-hook 'prog-mode-hook 'copilot-mode)
+#+end_src
+
+Use Enter for accepting completions
+#+begin_src emacs-lisp :tangle lisp/keybindings.el
+  (define-key copilot-completion-map (kbd "<return>") 'copilot-accept-completion)
 #+end_src
 
 * Org Mode
