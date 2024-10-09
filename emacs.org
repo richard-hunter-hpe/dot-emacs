@@ -1,3 +1,10 @@
+#+TITLE: Emacs Conf
+#+AUTHOR: Richard Hunter
+
+:PROPERTIES:
+:VISIBILITY: children
+:END:
+
 #+begin_src emacs-lisp :tangle lisp/common.el
   ;; supress debugger by default
   ;; (setq debug-on-error t)
@@ -857,8 +864,6 @@ Language grammars that don't seem to auto install with treesit-auto
 
   (defun setup-flycheck ()
     (message "setting up flycheck mode...")
-    ;; (require 'lsp-biome)
-
     (lsp-diagnostics-flycheck-enable)
     (flycheck-mode)
     (setq-default flycheck-disabled-checkers '(lsp))
@@ -1016,16 +1021,27 @@ Opt in line numbers on these modes regardless of global setting
 #+end_src
 
 ** HTML
-#+begin_src emacs-lisp :tangle /lisp/packages.el
-  (use-package web-mode)
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package web-mode
+  :mode
+  (("\\.html?\\'" . web-mode)
+   ("\\.php\\'" . web-mode)))
+
+  (setq web-mode-markup-indent-offset 2)
+  (setq web-mode-css-indent-offset 2)
+  (setq web-mode-code-indent-offset 2)
+  (setq web-mode-enable-current-element-highlight t)
+  (setq web-mode-enable-current-column-highlight t)
 #+end_src
+
 #+begin_src emacs-lisp :tangle lisp/hooks.el
   (defun setup-html-mode ()
     (interactive)
     (lsp))
   
-  (add-hook 'html-ts-mode-hook #'setup-html-mode)
+  (add-hook 'web-mode-hook #'setup-html-mode)
 #+end_src
+
 
 ** NodeJs
 #+begin_src emacs-lisp :tangle lisp/packages.el
@@ -1035,8 +1051,16 @@ Opt in line numbers on these modes regardless of global setting
   ;;  :custom
   ;;  (add-node-modules-path-command '("npm root"))) 
 
-  (use-package prettier-js)
+  ;;(use-package prettier-js)
 #+end_src
+
+
+** Code Formatting
+*** Prettier
+#+begin_src emacs-lisp :tangle lisp/packages.el
+(use-package prettier)
+#+end_src
+ 
 
 ** CSS
 
@@ -1090,13 +1114,13 @@ Testing out lsp-tailwindcss
 
   (defun setup-js-ts-mode ()
     ;; json-mode runs js-mode hooks so don't run
+    (interactive)
     (unless (derived-mode-p 'json-ts-mode)
     (message "Setting up js/ts mode")
-    (interactive)
     (lsp)
     (require 'lsp-diagnostics)
     (add-node-modules-path)
-    (prettier-js-mode)
+    (prettier-mode)
     (smartparens-mode)
     (eldoc-mode +1)
     (setq lsp-disagnostics-provider :none)
@@ -1231,7 +1255,7 @@ Testing out lsp-tailwindcss
     (lsp)
     (require 'lsp-diagnostics)
     (add-node-modules-path)
-    (prettier-js-mode)
+    (prettier-mode)
     (eldoc-mode +1)
     (setq lsp-disagnostics-provider :none))
 
@@ -1801,7 +1825,7 @@ Here are packages and things I'm experimenting with...
 ** Spacious Padding
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package spacious-padding
-    :if (display-graphic-p)
+    :if (display-graphic-p))
 #+end_src
 
 * Bootstrap

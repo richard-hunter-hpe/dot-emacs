@@ -1,30 +1,31 @@
 # Set config folder path
 SRC_DIR := $(shell pwd)
 
-# Source file
-SRC_FILE := $(SRC_DIR)/emacs.org
-
 # Early Init Source file
 EI_SRC_FILE := $(SRC_DIR)/early-init.org
 
-# Early init file
-EARLY_INIT_FILE := $(SRC_DIR)/early-init.el
-
-# Destination file
-DEST_FILE := $(SRC_DIR)/emacs.el
+# Source file
+SRC_FILE := $(SRC_DIR)/emacs.org
 
 # Destination directory
 DEST_DIR := $(SRC_DIR)/lisp
 
+# Early init file
+EI_DEST_FILE := $(SRC_DIR)/early-init.el
+
+# Destination file
+DEST_FILE := $(SRC_DIR)/emacs.el
+
 # EMACS_BINARY should point to your installation of GNU emacs
 EMACS_BINARY := $(HOME)/git/emacs/src/emacs
 
+# The following will compile early-init.org to early-init.el
 EARLY_INIT = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"early-init.org\")")
 
 # The following will compile emacs.org to emacs.el
 EMACS = $(shell $(EMACS_BINARY) -nw --batch --eval "(load-file \"early-init.el\")" --eval "(require 'org)" --eval "(org-babel-load-file \"emacs.org\")")
 
-.PHONY: test build clean help install
+.PHONY: test build clean help install 
 
 ## help: Output this message and exit
 help:
@@ -77,5 +78,5 @@ install: clear-cache
 	cd $(HOME)/.emacs.d && make build
 	mv $(HOME)/.emacs.d/emacs.el $(HOME)/.emacs.d/init.el
 
-## clean-install: Clean all pagages and lisp and rebuildOB
+## clean-install: Clean all pagages and lisp and rebuild
 clean-install: clean install

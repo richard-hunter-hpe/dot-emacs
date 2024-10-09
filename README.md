@@ -14,4 +14,4 @@
   
 - vterm-toggle wont attach to keyboard map of vterm
 - strange eslint errors here and there
-- 
+
