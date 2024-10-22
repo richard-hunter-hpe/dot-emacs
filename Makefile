@@ -25,7 +25,7 @@ EARLY_INIT = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval 
 # The following will compile emacs.org to emacs.el
 EMACS = $(shell $(EMACS_BINARY) -nw --batch --eval "(load-file \"early-init.el\")" --eval "(require 'org)" --eval "(org-babel-load-file \"emacs.org\")")
 
-.PHONY: test build clean help install 
+.PHONY: test build clear-cache clear-files clear-packages help install
 
 ## help: Output this message and exit
 help:
@@ -43,7 +43,7 @@ build-early-init: setup-dest-dir
 
 ## build: Generate and compile lisp
 build:
-	$(EMACS) 
+	$(EMACS)
 
 ## test: Test init file
 test: build;
@@ -58,18 +58,20 @@ print-test:
 test-gui:
 	$(shell $(EMACS_BINARY) -Q -l $(DEST_FILE))
 
+## clear-packages: Clear straight.el packages
 clear-packages:
 	rm -rf $(HOME)/.emacs.d/straight
 
+## clear-cache: Clear natively compiled cache
 clear-cache:
 	rm -rf $(HOME)/.emacs.d/eln-cache
 
-## clean: Clean up
-clean: clear-packages 
+## clear-lisp: Clear elisp files
+clear-lisp:
 	rm -rf $(DEST_DIR) $(DEST_FILE) $(EARLY_INIT_FILE)
 
 ## install: Tangle and move files to .emacs.d
-install: clear-cache
+install:
 	cp $(EI_SRC_FILE) $(HOME)/.emacs.d
 	cp $(SRC_FILE) $(HOME)/.emacs.d
 	cp $(SRC_DIR)/Makefile $(HOME)/.emacs.d
@@ -79,4 +81,4 @@ install: clear-cache
 	mv $(HOME)/.emacs.d/emacs.el $(HOME)/.emacs.d/init.el
 
 ## clean-install: Clean all pagages and lisp and rebuild
-clean-install: clean install
+clean-install: clear-lisp clear-packages clear-cache install
