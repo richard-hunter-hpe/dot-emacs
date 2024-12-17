@@ -13,14 +13,15 @@
 #+end_src
 
 * Quick Links
-- [[Org Mode][Org Mode]] 
-- [[JavaScript][JavaScript]] 
+- [[Org Mode][Org Mode]]
+- [[JavaScript][JavaScript]]
 
 * Out of Band Deps
 - plantuml
 - nerd fonts (monospace for terminal)
 - git
 - typescript? lang servers?
+- copilot lang server
 
 #+begin_src bash
   /Users/<user>/.nvm/versions/node/v20.np15.0/lib
@@ -417,7 +418,7 @@ EF Themes
     :bind ("<f6>" . ef-themes-load-random))
 #+end_src
 
-Configure =modus-vivendi= theme and other themes. 
+Configure =modus-vivendi= theme and other themes.
 Manual and configuration details can be found [[https://protesilaos.com/modus-themes][here]].
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package modus-themes
@@ -495,7 +496,7 @@ Customize Tab Bar face
 - an =alist= is just a "list of lists" in elisp
 - each element in the list takes the form:
 
-#+begin_src 
+#+begin_src
      ( BUFFER-MATCHER
        LIST-OF-DISPLAY-FUNCTIONS
        PARAMETERS)
@@ -899,7 +900,7 @@ Language grammars that don't seem to auto install with treesit-auto
                          (message "eslint IS available, attempting to set checker")
                       (flycheck-select-checker 'javascript-eslint)))))
 
-    
+
 
       (use-package lsp-mode
         :commands lsp
@@ -913,7 +914,7 @@ Language grammars that don't seem to auto install with treesit-auto
          :hook ((lsp-mode-hook . setup-lsp-mode)))
                ;; run flycheck setup so that it gets initialized when first starting the server
                ;; this results in the setup being run twice when opening the first file in a ts/js project
-              
+
                 ;; (lsp-after-initialize-hook . setup-flycheck)))
 
       (use-package lsp-ui :commands lsp-ui-mode)
@@ -1040,7 +1041,7 @@ Opt in line numbers on these modes regardless of global setting
   (use-package prettier
     :defer)
 #+end_src
- 
+
 ** Emacs Lisp
 #+begin_src emacs-lisp :tangle lisp/hooks.el
 #+end_src
@@ -1075,7 +1076,7 @@ Opt in line numbers on these modes regardless of global setting
   (setq add-node-modules-path-command "echo \"$(npm root)/.bin\"")
   ;;(use-package add-node-modules-path
   ;;  :custom
-  ;;  (add-node-modules-path-command '("npm root"))) 
+  ;;  (add-node-modules-path-command '("npm root")))
 
   ;;(use-package prettier-js)
 #+end_src
@@ -1195,9 +1196,9 @@ Testing out lsp-tailwindcss
     (eldoc-mode +1)
     ;; set tab-width
     (lambda ()
-      (setq-default) 
-      (setq tab-width 2) 
-      (setq standard-indent 2) 
+      (setq-default)
+      (setq tab-width 2)
+      (setq standard-indent 2)
       (setq indent-tabs-mode nil))
     ((lambda () (flycheck-select-checker 'go-gofmt)))
     (setq lsp-disagnostics-provider :none))
@@ -1226,7 +1227,7 @@ Testing out lsp-tailwindcss
 
   (with-eval-after-load 'eglot
     (add-to-list 'eglot-server-programs
-                 '(python-ts-mode . ("pyenv" "exec" "poetry" "run" "pyright-langserver" "--stdio"))))  
+                 '(python-ts-mode . ("pyenv" "exec" "poetry" "run" "pyright-langserver" "--stdio"))))
 
   (use-package pyenv-mode
     :hook (python-ts-mode-hook . pyenv-mode))
@@ -1275,7 +1276,7 @@ Testing out lsp-tailwindcss
     (interactive)
     ;(flycheck-select-checker 'json-python-json)
     (prettier-mode))
-    
+
   (use-package json-ts-mode)
   (add-hook 'json-ts-mode-hook #'setup-json-mode)
 #+end_src
@@ -1873,7 +1874,7 @@ Here are packages and things I'm experimenting with...
   (use-package beframe)
 
   (setq beframe-global-buffers '("*scratch*" "*Messages*" "*Backtrace*"))
-  
+
   (beframe-mode 1)
 
   (define-key global-map (kbd "C-c C-b") #'beframe-prefix-map)
