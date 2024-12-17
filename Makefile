@@ -1,3 +1,4 @@
+
 # Set config folder path
 SRC_DIR := $(shell pwd)
 
@@ -17,7 +18,7 @@ EI_DEST_FILE := $(SRC_DIR)/early-init.el
 DEST_FILE := $(SRC_DIR)/emacs.el
 
 # EMACS_BINARY should point to your installation of GNU emacs
-EMACS_BINARY := $(HOME)/git/emacs/src/emacs
+EMACS_BINARY := /opt/homebrew/bin/emacs
 
 # The following will compile early-init.org to early-init.el
 EARLY_INIT = $(shell $(EMACS_BINARY) -nw --batch --eval "(require 'org)" --eval "(org-babel-load-file \"early-init.org\")")
@@ -38,16 +39,17 @@ setup-dest-dir:
 	rm -rf $(DEST_DIR)
 	mkdir -p $(DEST_DIR)
 
+## build-early-init: Build early init file
 build-early-init: setup-dest-dir
 	$(EARLY_INIT)
 
 ## build: Generate and compile lisp
 build:
-	$(EMACS)
+	- $(EMACS)
 
 ## test: Test init file
 test: build;
-	$(shell $(EMACS_BINARY) -nw -Q -l $(DEST_FILE))
+	- $(shell $(EMACS_BINARY) -nw -Q -l $(DEST_FILE))
 
 ## print-test: Test init file
 print-test:

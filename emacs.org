@@ -22,6 +22,21 @@
 - git
 - typescript? lang servers?
 
+#+begin_src bash
+  /Users/<user>/.nvm/versions/node/v20.np15.0/lib
+├── @devcontainers/cli@0.71.0
+├── @techdocs/cli@1.8.19
+├── corepack@0.28.0
+├── eslint@8.57.1
+├── npm@10.7.0
+├── prettier@3.3.3
+├── pyright@1.1.384
+├── typescript-language-server@4.3.3
+├── typescript@5.3.3
+├── yaml-language-server@1.15.0
+└── yarn@1.22.22
+#+end_src
+
 * Early Init
 See early-init.org
 
@@ -116,7 +131,6 @@ Set PATH for GUI emacs
   (setq exec-path (append exec-path '("/opt/homebrew/sbin")))
   (setq exec-path (append exec-path '("/Users/hunterri/go/bin")))
   (setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v20.15.0/bin")))
-  ;; (setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v18.19.0/bin")))
   (setq exec-path (append exec-path '("/Users/hunterri/.pyenv/shims")))
 
   (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
@@ -127,7 +141,6 @@ Set PATH for GUI emacs
   (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/go/bin"))
   (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.pyenv/shims"))
   (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v20.15.0/bin"))
-  ;; (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v18.19.0/bin"))
 #+end_src
 
 Require some internal libs
@@ -397,6 +410,12 @@ Cool thing that helps with window management
 #+end_src
 
 ** Themes
+EF Themes
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package ef-themes
+    ;; load some random ef-theme
+    :bind ("<f6>" . ef-themes-load-random))
+#+end_src
 
 Configure =modus-vivendi= theme and other themes. 
 Manual and configuration details can be found [[https://protesilaos.com/modus-themes][here]].
@@ -411,18 +430,12 @@ Manual and configuration details can be found [[https://protesilaos.com/modus-th
                   (selection . (accented intense))
                   (popup . (accented))))
           modus-themes-mode-line '(padding accented 3d)
-          ;; modus-themes-syntax '(green-strings yellow-comments faint alt-syntax)
-          ;; modus-themes-region (quote (bg-only no-extend))
-          ;; modus-themes-vivendi-color-overrides
-          ;;   '((bg-main . "#1d2021")
-          ;;    (fg-main . "#c2c2c2"))
           modus-themes-org-agenda
           '((header-block . (variable-pitch scale-title))
             (header-date . (grayscale workaholic bold-today))
             (scheduled . uniform))
-          )
-    ;; escape hatch to modus themes from any other weak ass theme, f6 to toggle
-    :bind ("<f6>" . modus-themes-toggle))
+          ))
+
 #+end_src
 
 I like =doom-themes= also...
@@ -436,22 +449,16 @@ Humanoid themes
   (use-package humanoid-themes)
 #+end_src
 
-EF Themes
-#+begin_src emacs-lisp :tangle lisp/packages.el
-  (use-package ef-themes)
-#+end_src
-
 Declare all themes as safe
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (setq custom-safe-themes t)
 #+end_src
 
-
 ** Default Theme
 Set the default theme here:
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (load-theme 'doom-xcode t)
-  ;;(ef-theme-select 'ef-night)
+  ;;(load-theme 'doom-xcode t)
+  (load-theme 'ef-maris-dark)
 #+end_src
 
 ** Tab Bar
@@ -869,56 +876,57 @@ Language grammars that don't seem to auto install with treesit-auto
 
 ** LSP
 #+begin_src emacs-lisp :tangle lisp/packages.el
-    (defun setup-lsp-mode ()
-      (message "setting up lsp mode..."))
+      (defun setup-lsp-mode ()
+        (message "setting up lsp mode..."))
 
-  ;; (defun setup-flycheck ())
-      ;; (message "setting up flycheck mode...")
-      ;; (lsp-diagnostics-flycheck-enable)
-      ;; (flycheck-mode)
-      ;; (setq-default flycheck-disabled-checkers '(lsp))
-      ;; ;; tsserver returns markdown doc for eldoc
-      ;; ;; which requires lsp-eldoc-render-all to be fully shown
-      ;; (setq-local lsp-eldoc-render-all t)
-      ;; (unless (derived-mode-p 'json-mode)
-      ;;   (flycheck-add-next-checker 'javascript-eslint 'lsp))
-      ;; ;; run flycheck on save and on opening a new line
-      ;; (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
-      ;;  ;; prefer eslint over all checkers if it can be enabled, do it
-      ;; (unless (derived-mode-p 'json-mode)
-      ;;   (flycheck-select-checker 'javascript-eslint))
-      ;; (message "using eslint if available")
-      ;; ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
-      ;;                 (message "eslint IS available, attempting to set checker")
-      ;;              (flycheck-select-checker 'javascript-eslint)))))
+      (defun setup-flycheck ()
+         (message "setting up flycheck mode...")
+         (lsp-diagnostics-flycheck-enable)
+         (flycheck-mode)
+         (setq-default flycheck-disabled-checkers '(lsp))
+         ;; tsserver returns markdown doc for eldoc
+         ;; which requires lsp-eldoc-render-all to be fully shown
+  n       (setq-local lsp-eldoc-render-all t)
+         (unless (derived-mode-p 'json-mode)
+          (flycheck-add-next-checker 'javascript-eslint 'lsp))
+        ;; run flycheck on save and on opening a new line
+        (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
+         ;; prefer eslint over all checkers if it can be enabled, do it
+        (unless (derived-mode-p 'json-mode)
+          (flycheck-select-checker 'javascript-eslint))
+         (message "using eslint if available")
+         ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
+                         (message "eslint IS available, attempting to set checker")
+                      (flycheck-select-checker 'javascript-eslint)))))
 
-  ;;
+    
 
-    (use-package lsp-mode
-      :commands lsp
-      :custom
-      ;; DISABLED while debugging react prop completion
-      ;;(lsp-enable-snippet nil)
-      (lsp-enable-flycheck nil)
-      :init (setq
-             lsp-idle-delay 0.5
-             read-process-output-max (* 1024 1024))
-       :hook ((lsp-mode-hook . setup-lsp-mode)
-             ;; run flycheck setup so that it gets initialized when first starting the server
-             ;; this results in the setup being run twice when opening the first file in a ts/js project
-             (lsp-after-initialize-hook . setup-flycheck)))
+      (use-package lsp-mode
+        :commands lsp
+        :custom
+        ;; DISABLED while debugging react prop completion
+        ;;(lsp-enable-snippet nil)
+        (lsp-enable-flycheck nil)
+        :init (setq
+               lsp-idle-delay 0.5
+               read-process-output-max (* 1024 1024))
+         :hook ((lsp-mode-hook . setup-lsp-mode)))
+               ;; run flycheck setup so that it gets initialized when first starting the server
+               ;; this results in the setup being run twice when opening the first file in a ts/js project
+              
+                ;; (lsp-after-initialize-hook . setup-flycheck)))
 
-    (use-package lsp-ui :commands lsp-ui-mode)
-    (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
-    (use-package helm-lsp :commands helm-lsp-workspace-symbol)
-    (use-package helm-xref)
-    (use-package yasnippet)
-    (use-package avy)
-    (use-package hydra)
-    (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
-    (use-package which-key :config (which-key-mode))
-    (require 'helm-xref)
-    (yas-global-mode)
+      (use-package lsp-ui :commands lsp-ui-mode)
+      (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+      (use-package helm-lsp :commands helm-lsp-workspace-symbol)
+      (use-package helm-xref)
+      (use-package yasnippet)
+      (use-package avy)
+      (use-package hydra)
+      (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+      (use-package which-key :config (which-key-mode))
+      (require 'helm-xref)
+      (yas-global-mode)
 
 #+end_src
 
@@ -1061,7 +1069,6 @@ Opt in line numbers on these modes regardless of global setting
   (add-hook 'web-mode-hook #'setup-html-mode)
 #+end_src
 
-
 ** NodeJs
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package add-node-modules-path)
@@ -1072,7 +1079,6 @@ Opt in line numbers on these modes regardless of global setting
 
   ;;(use-package prettier-js)
 #+end_src
-
 
 
 ** CSS
@@ -1134,8 +1140,8 @@ Testing out lsp-tailwindcss
     (prettier-mode)
     (smartparens-mode)
     (eldoc-mode +1)
-    (setq lsp-disagnostics-provider :none)
-    (setup-flycheck)))
+    (setq lsp-disagnostics-provider :none)))
+    ;;(setup-flycheck)))
 
 
   (add-hook 'js-ts-mode-hook #'setup-js-ts-mode)
@@ -1251,13 +1257,13 @@ Testing out lsp-tailwindcss
       (when (and eslint (file-executable-p eslint))
         (setq-local flycheck-javascript-eslint-executable eslint))))
 
-  (defun setup-flycheck ()
-    (interactive)
-    (message "setting up flycheck mode...")
-    (setq-default flycheck-disabled-checkers '(lsp))
-    (rh/use-eslint-from-node-modules)
-    (lsp-diagnostics-flycheck-enable)
-    (flycheck-select-checker 'javascript-eslint))
+    ;;(defun setup-flycheck ())
+    ;;(interactive)
+    ;;(message "setting up flycheck mode...")
+    ;;(setq-default flycheck-disabled-checkers '(lsp))
+    ;;(rh/use-eslint-from-node-modules)
+    ;;(lsp-diagnostics-flycheck-enable)
+    ;;(flycheck-select-checker 'javascript-eslint))
   ;; this guy will run a check for eslint every time flycheck runs
   ;;(add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
 #+end_src
@@ -1267,20 +1273,20 @@ Testing out lsp-tailwindcss
   (defun setup-json-mode ()
     (message "Setting up json mode")
     (interactive)
-    (lsp)
-    (require 'lsp-diagnostics)
-    (add-node-modules-path)
-    (prettier-mode)
-    (eldoc-mode +1)
-    (setq lsp-disagnostics-provider :none))
-
-  ;;(use-package json-ts-mode)
+    ;(flycheck-select-checker 'json-python-json)
+    (prettier-mode))
+    
+  (use-package json-ts-mode)
   (add-hook 'json-ts-mode-hook #'setup-json-mode)
 #+end_src
 
 ** YAML
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package yaml-mode)
+  (add-to-list 'auto-mode-alist '("\\.ya?ml\\'" . yaml-mode))
+#+end_src
+
+#+begin_src emacs-lisp :tangle lisp/packages.el
 #+end_src
 
 ** Docker
@@ -1361,8 +1367,9 @@ Install dependencies and package
   (use-package editorconfig)
   (use-package jsonrpc)
   (use-package copilot
+    :straight (:host github :repo "copilot-emacs/copilot.el" :files ("*.el"))
     :defer t
-    :straight (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")))
+    :config (define-key copilot-mode-map (kbd "TAB") 'copilot-accept-completion))
 #+end_src
 
 Enable copilot when prog mode is on (disabled)
@@ -1372,6 +1379,7 @@ Enable copilot when prog mode is on (disabled)
 
 Use Enter for accepting completions
 #+begin_src emacs-lisp :tangle lisp/keybindings.el
+  ;; (define-key copilot-mode-map (kbd "TAB") 'copilot-accept-completion)
   ;; (define-key copilot-completion-map (kbd "M-s-p") 'copilot-accept-completion)
 #+end_src
 
@@ -1834,6 +1842,23 @@ Define how tickets progress
   (global-set-key (kbd "C-<f9>") 'vterm-toggle-cd)
 #+end_src
 
+
+* Custom Commands
+Here are little commands/macros that kind of thing that keep me more productive
+
+#+begin_src emacs-lisp :tangle lisp/commands.el
+  (defun rh/kill-buffer-and-window ()
+  "Kill the current buffer and close its window if it's not the only window in the frame."
+   (interactive)
+   (let ((window (selected-window)))
+     (kill-buffer)
+     (when (> (count-windows) 1)
+       (delete-window window))))
+
+   ;; replace kill-buffer keybinding
+   ;; (global-set-key (kbd "C-x k") 'rh/kill-buffer-and-window)
+#+end_src
+
 * Experiments
 Here are packages and things I'm experimenting with...
 
@@ -1843,9 +1868,18 @@ Here are packages and things I'm experimenting with...
     :if (display-graphic-p))
 #+end_src
 
+** Beframed
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package beframe)
+
+  (setq beframe-global-buffers '("*scratch*" "*Messages*" "*Backtrace*"))
+  
+  (beframe-mode 1)
+
+  (define-key global-map (kbd "C-c C-b") #'beframe-prefix-map)
+#+end_src
 * Bootstrap
 We create a bootstrap file to load all the lisp files that were generated by the code blocks above
-
 
 
 #+begin_src emacs-lisp :tangle emacs.el
@@ -1855,6 +1889,7 @@ We create a bootstrap file to load all the lisp files that were generated by the
   (load-library "modes")
   (load-library "hooks")
   (load-library "keybindings")
+  (load-library "commands")
 #+end_src
 
 * Finally

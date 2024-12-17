@@ -1,34 +1,26 @@
-* Early Init
-- hide certain elements if in GUI emacs including scroll bar, tool bar
-- disable package.el
-- Set any emacs specific env vars
+(setq package-enable-at-startup nil)
 
-see: https://www.reddit.com/r/emacs/comments/x9nmo6/getting_the_following_error_warning_comp/
+;; configure PATH env for gui
+(setq exec-path (append exec-path '("/usr/local/bin")))
+;;(setq exec-path (append exec-path '("/opt/homebrew/bin")))
+;;(setq exec-path (append exec-path '("/opt/homebrew/lib")))
+;; native compilation having issues finding gcc libraries on mac
+;;(setq exec-path (append exec-path '("/opt/homebrew/lib/gcc/14")))
+;;(setq exec-path (append exec-path '("/opt/homebrew/sbin")))
+(setq exec-path (append exec-path '("/Users/hunterri/go/bin")))
+(setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v20.15.0/bin")))
 
-#+begin_src emacs-lisp :tangle early-init.el
-    (setq package-enable-at-startup nil)
+(setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
+;;(setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/bin"))
+;;(setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/lib"))
+;;(setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/lib/gcc/14"))
+;;(setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/sbin"))
+(setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/go/bin"))
+(setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v20.15.0/bin"))
 
-    ;; configure PATH env for gui
-    (setq exec-path (append exec-path '("/usr/local/bin")))
-    ;;(setq exec-path (append exec-path '("/opt/homebrew/bin")))
-    ;;(setq exec-path (append exec-path '("/opt/homebrew/lib")))
-    ;; native compilation having issues finding gcc libraries on mac
-    ;;(setq exec-path (append exec-path '("/opt/homebrew/lib/gcc/14")))
-    ;;(setq exec-path (append exec-path '("/opt/homebrew/sbin")))
-    (setq exec-path (append exec-path '("/Users/hunterri/go/bin")))
-    (setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v20.15.0/bin")))
+(setenv "LIBRARY_PATH" (concat (getenv "LIBRARY_PATH") "/opt/homebrew/lib/gcc/14/gcc/aarch64-apple-darwin23/14"))
 
-    (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
-    ;;(setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/bin"))
-    ;;(setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/lib"))
-    ;;(setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/lib/gcc/14"))
-    ;;(setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/sbin"))
-    (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/go/bin"))
-    (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v20.15.0/bin"))
-
-    (setenv "LIBRARY_PATH" (concat (getenv "LIBRARY_PATH") "/opt/homebrew/lib/gcc/14/gcc/aarch64-apple-darwin23/14"))
-
-      (setq inhibit-startup-message t
+  (setq inhibit-startup-message t
 	    site-run-file nil                         ; No site-wide run-time initializations
 	    inhibit-default-init t                    ; No site-wide default library
 	    use-file-dialog nil
@@ -97,4 +89,3 @@ see: https://www.reddit.com/r/emacs/comments/x9nmo6/getting_the_following_error_
 
 	       ;; set use-package to use straight.el
 	       (setq straight-use-package-by-default t)
-#+end_src
