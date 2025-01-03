@@ -16,6 +16,7 @@ see: https://www.reddit.com/r/emacs/comments/x9nmo6/getting_the_following_error_
     ;;(setq exec-path (append exec-path '("/opt/homebrew/lib/gcc/14")))
     ;;(setq exec-path (append exec-path '("/opt/homebrew/sbin")))
     (setq exec-path (append exec-path '("/Users/hunterri/go/bin")))
+    (setq exec-path (append exec-path '("/Users/hunterri/.cargo/bin")))
     (setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v20.15.0/bin")))
 
     (setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))

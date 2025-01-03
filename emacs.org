@@ -684,14 +684,14 @@ Here we add custom utility functions
 ** Orderless & Helm
 Install and configure =orderless= a completetions framework helper. I use it in tandem with the built-in =icomplete=.
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (use-package orderless
-    :init (icomplete-mode) ; optional but recommended!
-    :custom (completion-styles '(orderless)))
+  ;(use-package orderless
+  ;  :init (icomplete-mode) ; optional but recommended!
+  ;  :custom (completion-styles '(orderless)))
     #+end_src
 
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
-    (use-package helm)
+  ;  (use-package helm)
 #+end_src
 
 * Magit
@@ -875,66 +875,73 @@ Language grammars that don't seem to auto install with treesit-auto
     (company-minimum-prefix-length 1))
 #+end_src
 
+I prefer the more emacs-like "C-n" keybinding for cycling between completion options. Remove "tab" from doing this so as to reserve it for Copilot completion
+
+#+begin_src emacs-lisp :tangle lisp/keybindings.el
+  (define-key company-active-map (kbd "<tab>") nil)
+  (define-key company-active-map (kbd "TAB") nil)  
+#+end_src
+
 ** LSP
 #+begin_src emacs-lisp :tangle lisp/packages.el
-      (defun setup-lsp-mode ()
-        (message "setting up lsp mode..."))
+  (defun setup-lsp-mode ()
+    (message "setting up lsp mode..."))
 
-      (defun setup-flycheck ()
-         (message "setting up flycheck mode...")
-         (lsp-diagnostics-flycheck-enable)
-         (flycheck-mode)
-         (setq-default flycheck-disabled-checkers '(lsp))
-         ;; tsserver returns markdown doc for eldoc
-         ;; which requires lsp-eldoc-render-all to be fully shown
-  n       (setq-local lsp-eldoc-render-all t)
-         (unless (derived-mode-p 'json-mode)
-          (flycheck-add-next-checker 'javascript-eslint 'lsp))
-        ;; run flycheck on save and on opening a new line
-        (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
-         ;; prefer eslint over all checkers if it can be enabled, do it
-        (unless (derived-mode-p 'json-mode)
-          (flycheck-select-checker 'javascript-eslint))
-         (message "using eslint if available")
-         ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
-                         (message "eslint IS available, attempting to set checker")
-                      (flycheck-select-checker 'javascript-eslint)))))
+  (defun setup-flycheck ()
+     (message "setting up flycheck mode...")
+     (lsp-diagnostics-flycheck-enable)
+     (flycheck-mode)
+     (setq-default flycheck-disabled-checkers '(lsp))
+     ;; tsserver returns markdown doc for eldoc
+     ;; which requires lsp-eldoc-render-all to be fully shown
+     (setq-local lsp-eldoc-render-all t)
+     (unless (derived-mode-p 'json-mode)
+      (flycheck-add-next-checker 'javascript-eslint 'lsp))
+    ;; run flycheck on save and on opening a new line
+    (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
+     ;; prefer eslint over all checkers if it can be enabled, do it
+    (unless (derived-mode-p 'json-mode)
+      (flycheck-select-checker 'javascript-eslint))
+     (message "using eslint if available")
+     ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
+                     (message "eslint IS available, attempting to set checker")
+                  (flycheck-select-checker 'javascript-eslint)))))
 
 
 
-      (use-package lsp-mode
-        :commands lsp
-        :custom
-        ;; DISABLED while debugging react prop completion
-        ;;(lsp-enable-snippet nil)
-        (lsp-enable-flycheck nil)
-        :init (setq
-               lsp-idle-delay 0.5
-               read-process-output-max (* 1024 1024))
-         :hook ((lsp-mode-hook . setup-lsp-mode)))
-               ;; run flycheck setup so that it gets initialized when first starting the server
-               ;; this results in the setup being run twice when opening the first file in a ts/js project
+  (use-package lsp-mode
+    :commands lsp
+    :custom
+    ;; DISABLED while debugging react prop completion
+    ;;(lsp-enable-snippet nil)
+    (lsp-enable-flycheck nil)
+    :init (setq
+           lsp-idle-delay 0.5
+           read-process-output-max (* 1024 1024))
+     :hook ((lsp-mode-hook . setup-lsp-mode)))
+           ;; run flycheck setup so that it gets initialized when first starting the server
+           ;; this results in the setup being run twice when opening the first file in a ts/js project
 
-                ;; (lsp-after-initialize-hook . setup-flycheck)))
+            ;; (lsp-after-initialize-hook . setup-flycheck)))
 
-      (use-package lsp-ui :commands lsp-ui-mode)
-      (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
-      (use-package helm-lsp :commands helm-lsp-workspace-symbol)
-      (use-package helm-xref)
-      (use-package yasnippet)
-      (use-package avy)
-      (use-package hydra)
-      (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
-      (use-package which-key :config (which-key-mode))
-      (require 'helm-xref)
-      (yas-global-mode)
+  (use-package lsp-ui :commands lsp-ui-mode)
+  (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+  (use-package helm-lsp :commands helm-lsp-workspace-symbol)
+  (use-package helm-xref)
+  (use-package yasnippet)
+  (use-package avy)
+  (use-package hydra)
+  (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+  (use-package which-key :config (which-key-mode))
+  (require 'helm-xref)
+  (yas-global-mode)
 
 #+end_src
 
 #+begin_src emacs-lisp :tangle lisp/keybindings.el
-(define-key global-map [remap find-file] #'helm-find-files)
-(define-key global-map [remap execute-extended-command] #'helm-M-x)
-(define-key global-map [remap switch-to-buffer] #'helm-mini)
+;;(define-key global-map [remap find-file] #'helm-find-files)
+;;(define-key global-map [remap execute-extended-command] #'helm-M-x)
+;;(define-key global-map [remap switch-to-buffer] #'helm-mini)
 #+end_src
 
 **** LSP Booster Stuff
@@ -1215,6 +1222,16 @@ Testing out lsp-tailwindcss
 
   (add-hook 'go-ts-mode-hook #'lsp-go-install-save-hooks)
 
+#+end_src
+
+** Rust
+See:
+- https://robert.kra.hn/posts/rust-emacs-setup/
+- https://rust-analyzer.github.io/manual.html#emacs
+
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package rust-mode
+    :hook (rust-ts-mode-hook . 'lsp-deferred))
 #+end_src
 
 ** Python
