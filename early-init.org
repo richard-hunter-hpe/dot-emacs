@@ -25,6 +25,7 @@ see: https://www.reddit.com/r/emacs/comments/x9nmo6/getting_the_following_error_
     ;;(setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/lib/gcc/14"))
     ;;(setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/sbin"))
     (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/go/bin"))
+    (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.cargo/bin"))
     (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v20.15.0/bin"))
 
     (setenv "LIBRARY_PATH" (concat (getenv "LIBRARY_PATH") "/opt/homebrew/lib/gcc/14/gcc/aarch64-apple-darwin23/14"))

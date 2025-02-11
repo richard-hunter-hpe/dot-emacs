@@ -1,6 +1,7 @@
 #+TITLE: Emacs Conf
 #+AUTHOR: Richard Hunter
 
+
 :PROPERTIES:
 :VISIBILITY: children
 :END:
@@ -17,11 +18,15 @@
 - [[JavaScript][JavaScript]]
 
 * Out of Band Deps
-- plantuml
+- plantuml (jar file)
 - nerd fonts (monospace for terminal)
 - git
-- typescript? lang servers?
+- nodejs
+- typescript toolchain
 - copilot lang server
+- rust toolchain
+- python toolchain
+- go toolchain
 
 #+begin_src bash
   /Users/<user>/.nvm/versions/node/v20.np15.0/lib
@@ -131,6 +136,7 @@ Set PATH for GUI emacs
   (setq exec-path (append exec-path '("/opt/homebrew/lib/gcc/14")))
   (setq exec-path (append exec-path '("/opt/homebrew/sbin")))
   (setq exec-path (append exec-path '("/Users/hunterri/go/bin")))
+  (setq exec-path (append exec-path '("/Users/hunterri/.cargo/bin")))
   (setq exec-path (append exec-path '("/Users/hunterri/.nvm/versions/node/v20.15.0/bin")))
   (setq exec-path (append exec-path '("/Users/hunterri/.pyenv/shims")))
 
@@ -140,6 +146,7 @@ Set PATH for GUI emacs
   (setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/lib/gcc/14"))
   (setenv "PATH" (concat (getenv "PATH") ":/opt/homebrew/sbin"))
   (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/go/bin"))
+  (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.cargo/bin"))
   (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.pyenv/shims"))
   (setenv "PATH" (concat (getenv "PATH") ":/Users/hunterri/.nvm/versions/node/v20.15.0/bin"))
 #+end_src
@@ -288,7 +295,7 @@ Open file system read-only files as read-only in Emacs as well
   (add-hook 'minibuffer-setup-hook 'my-minibuffer-setup)
   (defun my-minibuffer-setup ()
     (set (make-local-variable 'face-remapping-alist)
-         '((default :height 1.3))))
+         '((default :height 1.2))))
 #+end_src
 
 * Package System Setup
@@ -418,6 +425,12 @@ EF Themes
     :bind ("<f6>" . ef-themes-load-random))
 #+end_src
 
+Standard Themes
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package standard-themes)
+#+end_src
+
+
 Configure =modus-vivendi= theme and other themes.
 Manual and configuration details can be found [[https://protesilaos.com/modus-themes][here]].
 #+begin_src emacs-lisp :tangle lisp/packages.el
@@ -436,7 +449,6 @@ Manual and configuration details can be found [[https://protesilaos.com/modus-th
             (header-date . (grayscale workaholic bold-today))
             (scheduled . uniform))
           ))
-
 #+end_src
 
 I like =doom-themes= also...
@@ -680,18 +692,78 @@ Here we add custom utility functions
       (global-set-key (kbd "s-Z") 'undo-redo)) ; ⌘-Z = Redo
 #+end_src
 
+** DWIM Commands
+
+#+begin_src emacs-lisp :tangle lisp/keybindings.el
+  (defun rh/keyboard-quit-dwim ()
+    "Do-What-I-Mean behaviour for a general `keyboard-quit'.
+
+  The generic `keyboard-quit' does not do the expected thing when
+  the minibuffer is open.  Whereas we want it to close the
+  minibuffer, even without explicitly focusing it.
+
+  The DWIM behaviour of this command is as follows:
+
+  - When the region is active, disable it.
+  - When a minibuffer is open, but not focused, close the minibuffer.
+  - When the Completions buffer is selected, close it.
+  - In every other case use the regular `keyboard-quit'."
+    (interactive)
+    (cond
+     ((region-active-p)
+      (keyboard-quit))
+     ((derived-mode-p 'completion-list-mode)
+      (delete-completion-window))
+     ((> (minibuffer-depth) 0)
+      (abort-recursive-edit))
+     (t
+      (keyboard-quit))))
+
+  (define-key global-map (kbd "C-g") #'rh/keyboard-quit-dwim)
+
+#+end_src
+
 * Completions
 ** Orderless & Helm
 Install and configure =orderless= a completetions framework helper. I use it in tandem with the built-in =icomplete=.
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  ;(use-package orderless
-  ;  :init (icomplete-mode) ; optional but recommended!
-  ;  :custom (completion-styles '(orderless)))
+  ( use-package orderless
+   ;;  :init (icomplete-mode) ; optional but recommended!
+     :custom (completion-styles '(orderless)))
     #+end_src
 
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  ;  (use-package helm)
+  (use-package helm)
+#+end_src
+
+
+* Minibuffer
+** Vertico
+Lists minibuffer completion options vertically as opposed to a grid
+- https://github.com/minad/vertico
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package vertico
+  :custom
+  (vertico-scroll-margin 0) ;; Different scroll margin
+  (vertico-count 15) ;; Show more candidates
+  (vertico-resize nil) ;; Grow and shrink the Vertico minibuffer
+  (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
+  :init
+  (vertico-mode))
+#+end_src
+
+** Marginalia
+Provides rich information in minibuffer for various commands
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package marginalia
+    :init
+    (marginalia-mode))
+#+end_src
+
+* Consult
+#+begin_src emacs-lisp :tangle lisp/packages.el
+  (use-package consult)
 #+end_src
 
 * Magit
@@ -783,7 +855,21 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
   #+end_src
 * Treemacs Add Ons
 #+begin_src emacs-lisp :tangle lisp/packages.el
-    (use-package treemacs-icons-dired)
+  (use-package treemacs-icons-dired)
+
+  (dolist (face '(treemacs-root-face
+                  treemacs-git-unmodified-face
+                  treemacs-git-modified-face
+                  treemacs-git-renamed-face
+                  treemacs-git-ignored-face
+                  treemacs-git-untracked-face
+                  treemacs-git-added-face
+                  treemacs-git-conflict-face
+                  treemacs-directory-face
+                  treemacs-directory-collapsed-face
+                  treemacs-file-face
+                  treemacs-tags-face))
+    (set-face-attribute face nil :family "SF Pro" :height 140))
 #+end_src
 
 * Projectile
@@ -879,7 +965,7 @@ I prefer the more emacs-like "C-n" keybinding for cycling between completion opt
 
 #+begin_src emacs-lisp :tangle lisp/keybindings.el
   (define-key company-active-map (kbd "<tab>") nil)
-  (define-key company-active-map (kbd "TAB") nil)  
+  (define-key company-active-map (kbd "TAB") nil)
 #+end_src
 
 ** LSP
@@ -1026,7 +1112,7 @@ Disable line numbers for the following modes regardless of global setting
                  eshell-mode-hook
                  shell-mode-hook
                  image-mode-hook
-                 ;; helm-mode-hook
+                 helm-mode-hook
                  markdown-mode-hook))
    (add-hook mode (lambda() (display-line-numbers-mode -1))))
 #+end_src
@@ -1231,7 +1317,13 @@ See:
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package rust-mode
-    :hook (rust-ts-mode-hook . 'lsp-deferred))
+    :hook (rust-ts-mode-hook . lsp))
+
+  (defun lsp-rust-install-save-hooks ()
+     (add-hook 'before-save-hook #'lsp-format-buffer t t)
+     (add-hook 'before-save-hook #'lsp-organize-imports t t))
+
+  (add-hook 'rust-ts-mode-hook #'lsp-rust-install-save-hooks)
 #+end_src
 
 ** Python
@@ -1423,6 +1515,12 @@ copilot chat
   ;; Ellipsis styling
   (setq org-ellipsis "…")
   (set-face-attribute 'org-ellipsis nil :inherit 'default :box nil)
+#+end_src
+
+** Org Eval
+Don't ask for confirmation when evaluating code blocks. Could be changed to a function that returns bool with more complex logic if desired.
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+  (setq org-confirm-babel-evaluate 'nil)
 #+end_src
 
 ** Visual Settings
