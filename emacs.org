@@ -296,6 +296,23 @@ Open file system read-only files as read-only in Emacs as well
   (defun my-minibuffer-setup ()
     (set (make-local-variable 'face-remapping-alist)
          '((default :height 1.2))))
+
+;; Remove the arrow indicator for truncated lines
+(setq-default fringe-indicator-alist
+             (cons '(truncation nil nil)
+                   (assq-delete-all 'truncation (default-value 'fringe-indicator-alist))))
+
+#+end_src
+
+
+*** Line Wrapping
+
+In =prog-mode= prefer that lines extend beyond the window frame instead of wrapping.
+
+#+begin_src emacs-lisp :tangle lisp/hooks.el
+      (add-hook 'prog-mode-hook (lambda ()
+                                  (setq truncate-lines t)
+                                  (visual-line-mode -1)))
 #+end_src
 
 * Package System Setup
@@ -397,6 +414,21 @@ Lightweight package for easily creating cursor presets
 #+end_src
 
 
+** GitGutters
+IDE style gutters: https://ianyepan.github.io/posts/emacs-git-gutter/
+#+begin_src emacs-lisp :tangle lisp/packages.el
+(use-package git-gutter
+  :hook (prog-mode . git-gutter-mode)
+  :config
+  (setq git-gutter:update-interval 0.1))
+
+(use-package git-gutter-fringe
+  :config
+  (define-fringe-bitmap 'git-gutter-fr:added [224] nil nil '(center repeated))
+  (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
+  (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
+#+end_src
+
 ** Popper.el
 Cool thing that helps with window management
 
@@ -470,8 +502,7 @@ Declare all themes as safe
 ** Default Theme
 Set the default theme here:
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  ;;(load-theme 'doom-xcode t)
-  (load-theme 'ef-maris-dark)
+  (load-theme 'ef-dream)
 #+end_src
 
 ** Tab Bar
@@ -727,9 +758,9 @@ Here we add custom utility functions
 ** Orderless & Helm
 Install and configure =orderless= a completetions framework helper. I use it in tandem with the built-in =icomplete=.
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  ( use-package orderless
-   ;;  :init (icomplete-mode) ; optional but recommended!
-     :custom (completion-styles '(orderless)))
+  (use-package orderless
+    :config
+    (setq completion-styles '(orderless basic)))
     #+end_src
 
 
@@ -763,7 +794,18 @@ Provides rich information in minibuffer for various commands
 
 * Consult
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  (use-package consult)
+  (use-package consult
+    :bind (;; A recursive grep
+           ("M-s M-g" . consult-grep)
+           ;; Search for files names recursively
+           ("M-s M-f" . consult-find)
+           ;; Search through the outline (headings) of the file
+           ("M-s M-o" . consult-outline)
+           ;; Search the current buffer
+           ("M-s M-l" . consult-line)
+           ;; Switch to another buffer, or bookmarked file, or recently
+           ;; opened file.
+           ("M-s M-b" . consult-buffer)))
 #+end_src
 
 * Magit
@@ -802,18 +844,17 @@ https://github.com/magnars/multiple-cursors.el
 ** Configuration
 Setup =dired= the way I like it.
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-  (require 'dired-x) ;; enable extra features by default
-  (setq insert-directory-program "gls" dired-use-ls-dired t)
-  (use-package dired
-    :straight nil
-    :config
-    (setq dired-dwim-target t)
-    (setq dired-listing-switches
-          "-GFhlva --group-directories-first --time-style=long-iso")
-    :hook ((dired-mode-hook . dired-hide-details-mode)
-           (dired-mode-hook . (lambda() (display-line-numbers-mode -1)))
-           (dired-mode-hook . hl-line-mode)))
-;;           (dired-mode-hook . treemacs-icons-dired))
+    (require 'dired-x) ;; enable extra features by default
+    (setq insert-directory-program "gls" dired-use-ls-dired t)
+    (use-package dired
+      :straight nil
+      :config
+      (setq dired-dwim-target t)
+      (setq dired-listing-switches
+            "-GFhlva --group-directories-first --time-style=long-iso")
+      :hook ((dired-mode-hook . dired-hide-details-mode)
+             (dired-mode-hook . (lambda() (display-line-numbers-mode -1)))
+             (dired-mode-hook . hl-line-mode)))
 #+end_src
 
 Also auto refresh dired, but be quiet about it
@@ -822,6 +863,8 @@ Also auto refresh dired, but be quiet about it
 (setq auto-revert-verbose nil)
 #+end_src
 
+
+Why not icons; we can have all the things
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (if (display-graphic-p)
       (use-package nerd-icons-dired
@@ -890,7 +933,7 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 See: https://github.com/renzmann/treesit-auto
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  ;;(straight-use-package 'tree-sitter)
+  ;;(straight-use-package 'tree-sitter) 
   ;;(straight-use-package 'tree-sitter-langs)
   (straight-use-package 'treesit-auto)
 #+end_src
@@ -904,10 +947,11 @@ Language grammars that don't seem to auto install with treesit-auto
      (json "https://github.com/tree-sitter/tree-sitter-json")
      (make "https://github.com/alemuller/tree-sitter-make")
      (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
+     (js-doc "https://github.com/tree-sitter/tree-sitter-jsdoc")
      (markdown "https://github.com/ikatyang/tree-sitter-markdown")))
 
   ;; install them please - keep commented out because it runs every time
-  ;; (mapc #'treesit-install-language-grammar (mapcar #'car treesit-language-source-alist))
+  ;;(mapc #'treesit-install-language-grammar (mapcar #'car treesit-language-source-alist))
 #+end_src
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
@@ -961,7 +1005,7 @@ Language grammars that don't seem to auto install with treesit-auto
     (company-minimum-prefix-length 1))
 #+end_src
 
-I prefer the more emacs-like "C-n" keybinding for cycling between completion options. Remove "tab" from doing this so as to reserve it for Copilot completion
+I prefer the more emacs-like "C-n" keybinding for cycling between completion options. Remove "tab" from doing this so as to reserve it for Copilot completion...sigh
 
 #+begin_src emacs-lisp :tangle lisp/keybindings.el
   (define-key company-active-map (kbd "<tab>") nil)
@@ -983,8 +1027,8 @@ I prefer the more emacs-like "C-n" keybinding for cycling between completion opt
      (setq-local lsp-eldoc-render-all t)
      (unless (derived-mode-p 'json-mode)
       (flycheck-add-next-checker 'javascript-eslint 'lsp))
-    ;; run flycheck on save and on opening a new line
-    (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
+     ;; run flycheck on save and on opening a new line
+     (setq flycheck-check-syntax-automatically '(save new-line mode-enabled))
      ;; prefer eslint over all checkers if it can be enabled, do it
     (unless (derived-mode-p 'json-mode)
       (flycheck-select-checker 'javascript-eslint))
@@ -992,7 +1036,6 @@ I prefer the more emacs-like "C-n" keybinding for cycling between completion opt
      ((lambda () (if (flycheck-may-enable-checker 'javascript-eslint)
                      (message "eslint IS available, attempting to set checker")
                   (flycheck-select-checker 'javascript-eslint)))))
-
 
 
   (use-package lsp-mode
@@ -1330,7 +1373,7 @@ See:
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package python-mode
     :hook (python-ts-mode-hook . (lambda ()
-                                   (pyenv-mode-set "3.11.6")
+                                   (pyenv-mode-set "3.12.5")
                                    (eglot-ensure)
                                    (company-mode))))
 
@@ -1354,29 +1397,49 @@ See:
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package flycheck
-    :defer)
+    :defer
+    :init
+    (add-hook 'flycheck-mode-hook #'rh/setup-clippy-for-rust
+    (add-hook 'flycheck-mode-hook #'rh/setup-eslint-for-js-ts)))
 
-  (defun rh/use-eslint-from-node-modules ()
-    (let* ((root (locate-dominating-file
-                  (or (buffer-file-name) default-directory)
-                  "node_modules/eslint"))
-           (eslint
-            (and root
-                 (expand-file-name "node_modules/.bin/eslint"
-                                   root))))
-      (when (and eslint (file-executable-p eslint))
-        (setq-local flycheck-javascript-eslint-executable eslint))))
+  (defun rh/setup-eslint-for-js-ts ()
+    "Set up ESLint for JavaScript and TypeScript files."
+    (when (derived-mode-p 'js-mode 'js2-mode 'typescript-mode)
+      (setq-local flycheck-disabled-checkers '(lsp))
+      (rh/use-eslint-from-node-modules)))
+    
+    (defun rh/use-eslint-from-node-modules ()
+      "Set the local ESLint executable and configuration for Flycheck."
+      ;; Note that only works for .eslintrc.js files
+      (let* ((root (locate-dominating-file
+                    (or (buffer-file-name) default-directory)
+                    "node_modules/eslint"))
+             (eslint (and root
+                          (expand-file-name "node_modules/.bin/eslint" root)))
+             (eslint-config (and root
+                                 (expand-file-name ".eslintrc.js" root))))
+        (when (and eslint (file-executable-p eslint))
+          (setq-local flycheck-javascript-eslint-executable eslint))
+        (when (and eslint-config (file-exists-p eslint-config))
+          (setq-local flycheck-eslint-args (list "--config" eslint-config)))
+        ;; HACK: Delay checker selection to ensure Flycheck is fully initialized
+        (run-at-time "0.08 sec" nil (lambda ()
+                                     (flycheck-select-checker 'javascript-eslint)
+                                     (flycheck-buffer)))))
 
-    ;;(defun setup-flycheck ())
-    ;;(interactive)
-    ;;(message "setting up flycheck mode...")
-    ;;(setq-default flycheck-disabled-checkers '(lsp))
-    ;;(rh/use-eslint-from-node-modules)
-    ;;(lsp-diagnostics-flycheck-enable)
-    ;;(flycheck-select-checker 'javascript-eslint))
-  ;; this guy will run a check for eslint every time flycheck runs
-  ;;(add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)
+
+
+  (defun rh/setup-clippy-for-rust ()
+  "Set up Flycheck to use cargo-clippy for Rust files."
+  (when (derived-mode-p 'rust-mode 'rust-ts-mode)
+    ;; Disable the LSP checker for Rust
+    (setq-local flycheck-disabled-checkers '(lsp))
+    ;; Delay the selection of cargo-clippy to ensure Flycheck is ready
+    (run-at-time "0.08 sec" nil (lambda ()
+                                  (flycheck-select-checker 'rust-clippy)
+                                  (flycheck-buffer)))))
 #+end_src
+
 
 ** JSON
 #+begin_src emacs-lisp :tangle lisp/packages.el
