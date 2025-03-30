@@ -267,40 +267,51 @@ Open file system read-only files as read-only in Emacs as well
 
 ** UX Customizations
 #+begin_src emacs-lisp :tangle lisp/common.el
-    ;; don't auto split vertically
-  (setq split-height-threshold nil)
+        ;; don't auto split vertically
+      (setq split-height-threshold nil)
 
-  ;; (require 'move-text)
-  (fset 'yes-or-no-p 'y-or-n-p)
+      ;; (require 'move-text)
+      (fset 'yes-or-no-p 'y-or-n-p)
 
-  ;; replace line wrap char with whitespace
-  (set-display-table-slot standard-display-table 'wrap ?\ )
+      ;; replace line wrap char with whitespace
+      (set-display-table-slot standard-display-table 'wrap ?\ )
 
-  ;; Disable tab characters in indentation
-  (setq-default indent-tabs-mode nil)
+      ;; Disable tab characters in indentation
+      (setq-default indent-tabs-mode nil)
 
-  ;; Remove extra check for killing processes
-  (setq confirm-kill-processes nil)
+      ;; Remove extra check for killing processes
+      (setq confirm-kill-processes nil)
 
-  ;; Don't ring the bell
-  (setq ring-bell-function 'ignore)
+      ;; Don't ring the bell
+      (setq ring-bell-function 'ignore)
 
-  ;; default font
-  (set-frame-font "Menlo 14" nil t)
+      ;; default font
+      (set-frame-font "Menlo 14" nil t)
 
-  ;; scale text in smallerl steps
-  ;; (setq text-scale-mode-step 1.1)
+      ;; scale text in smallerl steps
+      ;; (setq text-scale-mode-step 1.1)
 
-  ;; set face size of minibuffer
-  (add-hook 'minibuffer-setup-hook 'my-minibuffer-setup)
-  (defun my-minibuffer-setup ()
-    (set (make-local-variable 'face-remapping-alist)
-         '((default :height 1.2))))
+      ;; set face size of minibuffer
+      (add-hook 'minibuffer-setup-hook 'my-minibuffer-setup)
+      (defun my-minibuffer-setup ()
+        (set (make-local-variable 'face-remapping-alist)
+             '((default :height 1.2))))
 
-;; Remove the arrow indicator for truncated lines
-(setq-default fringe-indicator-alist
-             (cons '(truncation nil nil)
-                   (assq-delete-all 'truncation (default-value 'fringe-indicator-alist))))
+  ;; Basic variable configuration.
+  (setq-default
+   initial-scratch-message ""          ; Remove initial message
+   ;; frame-title-format '("emacs :: %b")  ; Window title formatting
+   ;;truncate-lines t                    ; Truncate lines instead of wrapping
+   message-truncate-lines t            ; Truncate messages in the echo area
+   x-gtk-use-system-tooltips nil       ; Don't use system tooltips
+   ;; scroll-preserve-screen-position 1   ; Don't move cursor while scrolling
+   ;;scroll-margin 5                     ; Maintain a margin of 5 lines while scrolling
+   )
+
+  ;; Remove the arrow indicator for truncated lines
+  (setq-default fringe-indicator-alist
+                 (cons '(truncation nil nil)
+                       (assq-delete-all 'truncation (default-value 'fringe-indicator-alist))))
 
 #+end_src
 
@@ -311,7 +322,7 @@ In =prog-mode= prefer that lines extend beyond the window frame instead of wrapp
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
       (add-hook 'prog-mode-hook (lambda ()
-                                  (setq truncate-lines t)
+                                  (setq-local truncate-lines t)
                                   (visual-line-mode -1)))
 #+end_src
 
@@ -417,16 +428,16 @@ Lightweight package for easily creating cursor presets
 ** GitGutters
 IDE style gutters: https://ianyepan.github.io/posts/emacs-git-gutter/
 #+begin_src emacs-lisp :tangle lisp/packages.el
-(use-package git-gutter
-  :hook (prog-mode . git-gutter-mode)
-  :config
-  (setq git-gutter:update-interval 0.1))
+  (use-package git-gutter
+    :hook (prog-mode-hook . git-gutter-mode)
+    :config
+    (setq git-gutter:update-interval 0.1))
 
-(use-package git-gutter-fringe
-  :config
-  (define-fringe-bitmap 'git-gutter-fr:added [224] nil nil '(center repeated))
-  (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
-  (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
+  (use-package git-gutter-fringe
+    :config
+    (define-fringe-bitmap 'git-gutter-fr:added [224] nil nil '(center repeated))
+    (define-fringe-bitmap 'git-gutter-fr:modified [224] nil nil '(center repeated))
+    (define-fringe-bitmap 'git-gutter-fr:deleted [128 192 224 240] nil nil 'bottom))
 #+end_src
 
 ** Popper.el
@@ -899,20 +910,31 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 * Treemacs Add Ons
 #+begin_src emacs-lisp :tangle lisp/packages.el
   (use-package treemacs-icons-dired)
+  (setq treemacs-icon-size 16)
+  (setq treemacs-indentation 1)
+  (setq treemacs-width 25)
+
+  ;; Define the function to set Treemacs icon size and resize icons
+  (defun my-treemacs-set-icon-size ()
+    "Set Treemacs icon size to 16 and resize icons."
+    (treemacs-resize-icons 16))
+
+  ;; Add the function to the treemacs-mode-hook
+  (add-hook 'treemacs-mode-hook 'my-treemacs-set-icon-size)
 
   (dolist (face '(treemacs-root-face
-                  treemacs-git-unmodified-face
-                  treemacs-git-modified-face
-                  treemacs-git-renamed-face
-                  treemacs-git-ignored-face
-                  treemacs-git-untracked-face
-                  treemacs-git-added-face
-                  treemacs-git-conflict-face
-                  treemacs-directory-face
-                  treemacs-directory-collapsed-face
-                  treemacs-file-face
-                  treemacs-tags-face))
-    (set-face-attribute face nil :family "SF Pro" :height 140))
+                    treemacs-git-unmodified-face
+                    treemacs-git-modified-face
+                    treemacs-git-renamed-face
+                    treemacs-git-ignored-face
+                    treemacs-git-untracked-face
+                    treemacs-git-added-face
+                    treemacs-git-conflict-face
+                    treemacs-directory-face
+                    treemacs-directory-collapsed-face
+                    treemacs-file-face
+                    treemacs-tags-face))
+      (set-face-attribute face nil :family "SF Pro" :height 130))
 #+end_src
 
 * Projectile
@@ -933,7 +955,7 @@ Use "F" to open all marked files in =dired=. Code lifted from [[https://stackove
 See: https://github.com/renzmann/treesit-auto
 
 #+begin_src emacs-lisp :tangle lisp/packages.el
-  ;;(straight-use-package 'tree-sitter) 
+  ;;(straight-use-package 'tree-sitter)
   ;;(straight-use-package 'tree-sitter-langs)
   (straight-use-package 'treesit-auto)
 #+end_src
@@ -1089,15 +1111,15 @@ See: https://github.com/blahgeek/emacs-lsp-booster
 Set the =prog-mode= hook. =prog-mode= is a major mode provided by Emacs. Typically, it is not used directly, instead many programming-related major modes are derived from this mode. Any hooks defined here will be applied to all modes that derive from it, inluding =js-mode= and more.
 
 #+begin_src emacs-lisp :tangle lisp/hooks.el
-(defun hook-prog-mode ()
-  "Hook for Prog mode."
-  (local-set-key (kbd "C-c <right>") 'hs-show-block)
-  (local-set-key (kbd "C-c <left>")  'hs-hide-block)
-  (local-set-key (kbd "C-c <up>")    'hs-hide-all)
-  (local-set-key (kbd "C-c <down>")  'hs-show-all)
-  (hs-minor-mode t))
+  (defun hook-prog-mode ()
+    "Hook for Prog mode."
+    (local-set-key (kbd "C-c <right>") 'hs-show-block)
+    (local-set-key (kbd "C-c <left>")  'hs-hide-block)
+    (local-set-key (kbd "C-c <up>")    'hs-hide-all)
+    (local-set-key (kbd "C-c <down>")  'hs-show-all)
+    (hs-minor-mode t))
 
-(add-hook 'prog-mode-hook #'hook-prog-mode)
+  (add-hook 'prog-mode-hook #'hook-prog-mode)
 #+end_src
 
 ** Text Mode
@@ -1407,7 +1429,7 @@ See:
     (when (derived-mode-p 'js-mode 'js2-mode 'typescript-mode)
       (setq-local flycheck-disabled-checkers '(lsp))
       (rh/use-eslint-from-node-modules)))
-    
+
     (defun rh/use-eslint-from-node-modules ()
       "Set the local ESLint executable and configuration for Flycheck."
       ;; Note that only works for .eslintrc.js files
